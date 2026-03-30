@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Data Dashboard</title>
+</head>
+<body>
+
+<h2>📊 Cloud Data Dashboard</h2>
+
+<button onclick="start()">Start Receiving</button>
+
+<pre id="output"></pre>
+
+<script>
+let running = false;
+
+function start() {
+    running = true;
+    fetchData();
+}
+
+async function fetchData() {
+    if (!running) return;
+
+    let res = await fetch('/data');
+    let data = await res.json();
+
+    document.getElementById("output").innerText =
+        JSON.stringify(data, null, 2);
+
+    setTimeout(fetchData, 2000);
+}
+</script>
+
+</body>
+</html>
