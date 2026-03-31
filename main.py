@@ -3,37 +3,43 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.requests import Request
 import pandas as pd
-import os
 
 app = FastAPI()
 
-# 模板（前端页面）
+# 前端页面
 templates = Jinja2Templates(directory="templates")
 
-DATA_FILE = "data.csv"
+# 👉 用内存存数据（替代 CSV 文件）
+data_store = []
 
-# 首页（可视化界面）
+# 首页（网页）
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
-# 上传数据（设备 / 本地电脑用）
+# 上传数据（设备 / 本地电脑）
 @app.post("/upload")
 async def upload(file: UploadFile = File(...)):
-    df = pd.read_csv(file.file)
+    try:
+        df = pd.read_csv(file.file)
 
-    if os.path.exists(DATA_FILE):
-        df.to_csv(DATA_FILE, mode="a", header=False, index=False)
-    else:
-        df.to_csv(DATA_FILE, index=False)
+        # 转成字典
+        records = df.to_dict(orient="records")
 
-    return {"status": "uploaded"}
+        # 加入全局数据
+        data_store.extend(records)
+
+        return {
+            "status": "uploaded",
+            "received_rows": len(records),
+            "total_rows": len(data_store)
+        }
+
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
 
 # 获取数据（前端用）
 @app.get("/data")
 def get_data():
-    if not os.path.exists(DATA_FILE):
-        return []
-
-    df = pd.read_csv(DATA_FILE)
-    return df.tail(50).to_dict(orient="records")
+    # 返回最新50条
+    return data_store[-50:]
