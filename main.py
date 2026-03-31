@@ -15,7 +15,11 @@ data_store = []
 # 首页（网页）
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+    return templates.TemplateResponse(
+    request=request,
+    name="index.html",
+    context={}
+)
 
 # 上传数据（设备 / 本地电脑）
 @app.post("/upload")
