@@ -1,97 +1,226 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Control Panel</title>
-    <style>
-        body {
-            font-family: Arial;
-            padding: 40px;
-        }
-        h1 {
-            margin-bottom: 20px;
-        }
-        input, select, button {
-            display: block;
-            margin: 10px 0;
-            padding: 8px;
-            font-size: 16px;
-        }
-        button {
-            cursor: pointer;
-        }
-    </style>
+<meta charset="UTF-8">
+<title>Control Panel</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+    body {
+        font-family: Arial;
+        margin: 0;
+        display: flex;
+    }
+
+    .left {
+        width: 30%;
+        padding: 30px;
+        border-right: 2px solid #ccc;
+    }
+
+    .right {
+        width: 70%;
+        padding: 20px;
+        overflow-y: auto;
+        height: 100vh;
+    }
+
+    input, select, button {
+        display: block;
+        margin: 10px 0;
+        padding: 8px;
+        font-size: 16px;
+    }
+
+    .row {
+        display: flex;
+        align-items: center;
+        margin-bottom: 40px;
+    }
+
+    .label {
+        width: 120px;
+        font-weight: bold;
+    }
+
+    .charts {
+        display: flex;
+        gap: 20px;
+    }
+
+    canvas {
+        width: 250px !important;
+        height: 200px !important;
+    }
+</style>
 </head>
+
 <body>
 
-<h1>Control Panel</h1>
+<!-- 左侧控制 -->
+<div class="left">
+    <h1>Control Panel</h1>
 
-<label>VRS (0–180, multiple of 10)</label>
-<input type="number" id="vrs" min="0" max="180" step="10">
+    <label>VRS (0–180, multiple of 10)</label>
+    <input type="number" id="vrs" min="0" max="180" step="10">
 
-<label>HRS (0–180, multiple of 10)</label>
-<input type="number" id="hrs" min="0" max="180" step="10">
+    <label>HRS (0–180, multiple of 10)</label>
+    <input type="number" id="hrs" min="0" max="180" step="10">
 
-<label>S (Shutdown)</label>
-<select id="shutdown">
-    <option value="No">No</option>
-    <option value="Yes">Yes</option>
-</select>
+    <label>S (Shutdown)</label>
+    <select id="shutdown">
+        <option>No</option>
+        <option>Yes</option>
+    </select>
 
-<button onclick="startMeasurement()">Start Measurement</button>
+    <button onclick="startMeasurement()">Start Measurement</button>
+</div>
+
+<!-- 右侧数据 -->
+<div class="right">
+    <h1>Measured Data</h1>
+    <div id="chartsContainer"></div>
+</div>
 
 <script>
-function validateInput(value) {
-    return value >= 0 && value <= 180 && value % 10 === 0;
+
+// ================= 控制部分 =================
+
+function validateInput(v) {
+    return v >= 0 && v <= 180 && v % 10 === 0;
 }
 
 function startMeasurement() {
-    let vrs = parseInt(document.getElementById("vrs").value);
-    let hrs = parseInt(document.getElementById("hrs").value);
-    let shutdown = document.getElementById("shutdown").value;
+    let vrs = parseInt(vrsInput.value);
+    let hrs = parseInt(hrsInput.value);
+    let shutdown = shutdownSelect.value;
 
-    // 校验
     if (!validateInput(vrs) || !validateInput(hrs)) {
-        alert("VRS 和 HRS 必须是 0–180 且为10的倍数！");
+        alert("Invalid input!");
         return;
     }
 
-    // 转换
-    let vrs_val = vrs / 10;
-    let hrs_val = hrs / 10;
-    let shutdown_val = shutdown === "Yes" ? 1 : 0;
+    let csv = `vrs,hrs,shutdown\n${vrs/10},${hrs/10},${shutdown==="Yes"?1:0}`;
+    let blob = new Blob([csv], {type:"text/csv"});
 
-    // 生成 CSV 内容
-    let csvContent = "vrs,hrs,shutdown\n" +
-                     `${vrs_val},${hrs_val},${shutdown_val}`;
-
-    // 创建 Blob
-    let blob = new Blob([csvContent], { type: "text/csv" });
-
-    // （可选）本地下载
-    let link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = "command.csv";
-    link.click();
-
-    // 上传
     let formData = new FormData();
     formData.append("file", blob, "command.csv");
 
     fetch("https://render-er7w.onrender.com/upload", {
         method: "POST",
         body: formData
-    })
-    .then(response => response.text())
-    .then(data => {
-        console.log("Uploaded:", data);
-        alert("Upload success!");
-    })
-    .catch(error => {
-        console.error("Error:", error);
-        alert("Upload failed!");
+    }).then(()=>alert("Uploaded"));
+}
+
+// ================= 数据绘图部分 =================
+
+async function fetchData() {
+    try {
+        let res = await fetch("https://render-er7w.onrender.com/data.csv?ts=" + Date.now());
+        let text = await res.text();
+        processCSV(text);
+    } catch(e) {
+        console.log("No data yet");
+    }
+}
+
+function processCSV(csv) {
+    let lines = csv.trim().split("\n");
+    let data = lines.slice(1).map(l => l.split(",").map(Number));
+
+    let groups = {};
+
+    data.forEach(row => {
+        let [H, V, F, S21, D2] = row;
+
+        // 跳过无效行（频率=0）
+        if (F === 0) return;
+
+        let key = `${H}_${V}`;
+        if (!groups[key]) {
+            groups[key] = {
+                H, V,
+                freq: [],
+                s21: [],
+                d2: []
+            };
+        }
+
+        groups[key].freq.push(F);
+        groups[key].s21.push(S21);
+        groups[key].d2.push(D2);
+    });
+
+    renderCharts(groups);
+}
+
+function renderCharts(groups) {
+    let container = document.getElementById("chartsContainer");
+    container.innerHTML = "";
+
+    Object.values(groups).forEach((g, idx) => {
+
+        let row = document.createElement("div");
+        row.className = "row";
+
+        let label = document.createElement("div");
+        label.className = "label";
+        label.innerText = `VRS:${g.H} HRS:${g.V}`;
+
+        let charts = document.createElement("div");
+        charts.className = "charts";
+
+        let c1 = document.createElement("canvas");
+        let c2 = document.createElement("canvas");
+        let c3 = document.createElement("canvas");
+
+        charts.appendChild(c1);
+        charts.appendChild(c2);
+        charts.appendChild(c3);
+
+        row.appendChild(label);
+        row.appendChild(charts);
+        container.appendChild(row);
+
+        drawChart(c1, g.freq, g.freq, "Frequency");
+        drawChart(c2, g.freq, g.s21, "S21 (dB)");
+        drawChart(c3, g.freq, g.d2, "Data2");
     });
 }
+
+function drawChart(canvas, x, y, title) {
+    new Chart(canvas, {
+        type: 'line',
+        data: {
+            labels: x,
+            datasets: [{
+                data: y,
+                fill: false,
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: false,
+            plugins: {
+                legend: { display: false },
+                title: {
+                    display: true,
+                    text: title
+                }
+            },
+            scales: {
+                x: { display: false }
+            }
+        }
+    });
+}
+
+// ================= 自动轮询 =================
+
+// 每5秒检查一次新数据
+setInterval(fetchData, 5000);
+
 </script>
 
 </body>
