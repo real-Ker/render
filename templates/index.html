@@ -235,9 +235,10 @@ function drawChart(canvas, x, y, title) {
 
 // ================= 自动轮询 =================
 
-fetchData();
-// 每5秒检查一次新数据
-setInterval(fetchData, 5000);
+window.onload = () => {
+    fetchData();
+    setInterval(fetchData, 3000);
+};
 
 </script>
 
