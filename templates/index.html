@@ -80,6 +80,7 @@
 <!-- 右侧数据 -->
 <div class="right">
     <h1>Measured Data</h1>
+    <button onclick="downloadJSON()">Download Data</button>
     <div id="chartsContainer"></div>
 </div>
 
@@ -247,6 +248,35 @@ function drawChart(canvas, x, y, title) {
     });
 }
 
+// ================= 下载数据 =================
+
+async function downloadJSON() {
+    try {
+        let res = await fetch('/data?ts=' + Date.now());
+        let data = await res.json();
+
+        // 转成字符串
+        let jsonStr = JSON.stringify(data, null, 2);
+
+        // 创建 Blob
+        let blob = new Blob([jsonStr], { type: "application/json" });
+
+        // 创建下载链接
+        let link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        let now = new Date();
+        let filename = `data_${now.getFullYear()}_${now.getMonth()+1}_${now.getDate()}_${now.getHours()}${now.getMinutes()}${now.getSeconds()}.json`;
+        link.download = filename;
+
+        // 触发下载
+        link.click();
+
+    } catch (e) {
+        console.error("Download failed:", e);
+        alert("Download failed");
+    }
+}
+    
 // ================= 自动轮询 =================
 
 window.onload = () => {
