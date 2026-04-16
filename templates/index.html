@@ -92,25 +92,39 @@ function validateInput(v) {
 }
 
 function startMeasurement() {
-    let vrs = parseInt(vrsInput.value);
-    let hrs = parseInt(hrsInput.value);
-    let shutdown = shutdownSelect.value;
+    let vrs = parseInt(document.getElementById("vrs").value);
+    let hrs = parseInt(document.getElementById("hrs").value);
+    let shutdown = document.getElementById("shutdown").value;
 
     if (!validateInput(vrs) || !validateInput(hrs)) {
-        alert("Invalid input!");
+        alert("VRS and HRS must be between 0 and 180 and must be multiples of 10!");
         return;
     }
 
     let csv = `vrs,hrs,shutdown\n${vrs/10},${hrs/10},${shutdown==="Yes"?1:0}`;
     let blob = new Blob([csv], {type:"text/csv"});
 
+    let link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "command.csv";
+    link.click();
+    
     let formData = new FormData();
     formData.append("file", blob, "command.csv");
 
     fetch("https://render-er7w.onrender.com/upload", {
         method: "POST",
         body: formData
-    }).then(()=>alert("Uploaded"));
+    })
+    .then(response => response.text())
+    .then(data => {
+        console.log("Uploaded:", data);
+        alert("Upload success!");
+    })
+    .catch(error => {
+        console.error("Error:", error);
+        alert("Upload failed!");
+    });
 }
 
 // ================= 数据绘图部分 =================
