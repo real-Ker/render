@@ -136,29 +136,30 @@ function processData(data) {
         let S21 = row.S21_dB;
         let D2 = row.Data2;
 
-        // 跳过无效频率（但 Data2 可能要保留）
-        if (F === 0 && D2 === 0) return;
-
         let key = `${H}_${V}`;
 
         if (!groups[key]) {
             groups[key] = {
                 H, V,
+                x: [],       // 统一x轴（index）
                 freq: [],
                 s21: [],
                 d2: []
             };
         }
 
-        // 频率数据
+        let g = groups[key];
+
+        // 情况1：正常测量点
         if (F !== 0) {
-            groups[key].freq.push(F);
-            groups[key].s21.push(S21);
+            g.x.push(g.x.length);   // index
+            g.freq.push(F);
+            g.s21.push(S21);
         }
 
-        // Data2（独立记录）
+        // 情况2：Data2（MLOG）
         if (D2 !== 0) {
-            groups[key].d2.push(D2);
+            g.d2.push(D2);
         }
     });
 
@@ -193,9 +194,9 @@ function renderCharts(groups) {
         row.appendChild(charts);
         container.appendChild(row);
 
-        drawChart(c1, g.freq, g.freq, "Frequency");
-        drawChart(c2, g.freq, g.s21, "S21 (dB)");
-        drawChart(c3, g.freq, g.d2, "Data2");
+        drawChart(c1, g.x, g.freq, "Frequency (Hz)");
+        drawChart(c2, g.x, g.s21, "S21 (dB)");
+        drawChart(c3, null, g.d2, "Data2 (MLOG)");
     });
 }
 
