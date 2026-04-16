@@ -1,34 +1,96 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Data Dashboard</title>
+    <meta charset="UTF-8">
+    <title>Control Panel</title>
+    <style>
+        body {
+            font-family: Arial;
+            padding: 40px;
+        }
+        h1 {
+            margin-bottom: 20px;
+        }
+        input, select, button {
+            display: block;
+            margin: 10px 0;
+            padding: 8px;
+            font-size: 16px;
+        }
+        button {
+            cursor: pointer;
+        }
+    </style>
 </head>
 <body>
 
-<h2>📊 Cloud Data Dashboard</h2>
+<h1>Control Panel</h1>
 
-<button onclick="start()">Start Receiving</button>
+<label>VRS (0–180, multiple of 10)</label>
+<input type="number" id="vrs" min="0" max="180" step="10">
 
-<pre id="output"></pre>
+<label>HRS (0–180, multiple of 10)</label>
+<input type="number" id="hrs" min="0" max="180" step="10">
+
+<label>S (Shutdown)</label>
+<select id="shutdown">
+    <option value="No">No</option>
+    <option value="Yes">Yes</option>
+</select>
+
+<button onclick="startMeasurement()">Start Measurement</button>
 
 <script>
-let running = false;
-
-function start() {
-    running = true;
-    fetchData();
+function validateInput(value) {
+    return value >= 0 && value <= 180 && value % 10 === 0;
 }
 
-async function fetchData() {
-    if (!running) return;
+function startMeasurement() {
+    let vrs = parseInt(document.getElementById("vrs").value);
+    let hrs = parseInt(document.getElementById("hrs").value);
+    let shutdown = document.getElementById("shutdown").value;
 
-    let res = await fetch('/data');
-    let data = await res.json();
+    // 校验
+    if (!validateInput(vrs) || !validateInput(hrs)) {
+        alert("VRS 和 HRS 必须是 0–180 且为10的倍数！");
+        return;
+    }
 
-    document.getElementById("output").innerText =
-        JSON.stringify(data, null, 2);
+    // 转换
+    let vrs_val = vrs / 10;
+    let hrs_val = hrs / 10;
+    let shutdown_val = shutdown === "Yes" ? 1 : 0;
 
-    setTimeout(fetchData, 2000);
+    // 生成 CSV 内容
+    let csvContent = "vrs,hrs,shutdown\n" +
+                     `${vrs_val},${hrs_val},${shutdown_val}`;
+
+    // 创建 Blob
+    let blob = new Blob([csvContent], { type: "text/csv" });
+
+    // （可选）本地下载
+    let link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "command.csv";
+    link.click();
+
+    // 上传
+    let formData = new FormData();
+    formData.append("file", blob, "command.csv");
+
+    fetch("https://render-er7w.onrender.com/upload", {
+        method: "POST",
+        body: formData
+    })
+    .then(response => response.text())
+    .then(data => {
+        console.log("Uploaded:", data);
+        alert("Upload success!");
+    })
+    .catch(error => {
+        console.error("Error:", error);
+        alert("Upload failed!");
+    });
 }
 </script>
 
