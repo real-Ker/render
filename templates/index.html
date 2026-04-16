@@ -117,27 +117,30 @@ function startMeasurement() {
 
 async function fetchData() {
     try {
-        let res = await fetch("https://render-er7w.onrender.com/data.csv?ts=" + Date.now());
-        let text = await res.text();
-        processCSV(text);
-    } catch(e) {
+        let res = await fetch("./data?ts=" + Date.now()); // 防缓存
+        let json = await res.json();
+        processData(json);
+    } catch (e) {
         console.log("No data yet");
     }
 }
 
-function processCSV(csv) {
-    let lines = csv.trim().split("\n");
-    let data = lines.slice(1).map(l => l.split(",").map(Number));
+function processData(data) {
 
     let groups = {};
 
     data.forEach(row => {
-        let [H, V, F, S21, D2] = row;
+        let H = row.H;
+        let V = row.V;
+        let F = row.Frequency_Hz;
+        let S21 = row.S21_dB;
+        let D2 = row.Data2;
 
-        // 跳过无效行（频率=0）
-        if (F === 0) return;
+        // 跳过无效频率（但 Data2 可能要保留）
+        if (F === 0 && D2 === 0) return;
 
         let key = `${H}_${V}`;
+
         if (!groups[key]) {
             groups[key] = {
                 H, V,
@@ -147,9 +150,16 @@ function processCSV(csv) {
             };
         }
 
-        groups[key].freq.push(F);
-        groups[key].s21.push(S21);
-        groups[key].d2.push(D2);
+        // 频率数据
+        if (F !== 0) {
+            groups[key].freq.push(F);
+            groups[key].s21.push(S21);
+        }
+
+        // Data2（独立记录）
+        if (D2 !== 0) {
+            groups[key].d2.push(D2);
+        }
     });
 
     renderCharts(groups);
@@ -190,6 +200,12 @@ function renderCharts(groups) {
 }
 
 function drawChart(canvas, x, y, title) {
+
+    // 如果没有 x，就自动生成序号
+    if (!x || x.length === 0) {
+        x = y.map((_, i) => i);
+    }
+
     new Chart(canvas, {
         type: 'line',
         data: {
@@ -210,7 +226,7 @@ function drawChart(canvas, x, y, title) {
                 }
             },
             scales: {
-                x: { display: false }
+                x: { display: true }
             }
         }
     });
