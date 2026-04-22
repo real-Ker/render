@@ -316,9 +316,9 @@ window.onload = () => {
 
 <script type="module">
 // ================= 3D模型 =================
+// ================= 3D模型 =================
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160/build/three.module.js';
 
-// ===== 获取容器 =====
 const container = document.getElementById("modelView");
 
 // ===== 场景 =====
@@ -332,7 +332,7 @@ const camera = new THREE.PerspectiveCamera(
     0.1,
     100
 );
-camera.position.set(5, 3, 6);
+camera.position.set(6, 4, 8);
 
 // ===== 渲染器 =====
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -340,66 +340,125 @@ renderer.setSize(container.clientWidth, container.clientHeight);
 container.appendChild(renderer.domElement);
 
 // ===== 光照 =====
-scene.add(new THREE.HemisphereLight(0xffffff, 0x444444));
+scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 1));
 
-// ===== 底座 =====
-const base = new THREE.Mesh(
-    new THREE.BoxGeometry(3, 0.5, 2),
-    new THREE.MeshStandardMaterial({ color: 0x777777 })
+// ======================================================
+// ① 外框架（细长方体）
+// ======================================================
+const frameMat = new THREE.MeshStandardMaterial({ color: 0x8b0000 });
+
+const frameGroup = new THREE.Group();
+scene.add(frameGroup);
+
+// 四边框
+const edges = [
+    // 底
+    [3, 0.1, 2, 0, 0, 0],
+    // 顶
+    [3, 0.1, 2, 0, 2, 0],
+    // 左
+    [0.1, 2, 2, -1.5, 1, 0],
+    // 右
+    [0.1, 2, 2, 1.5, 1, 0],
+];
+
+edges.forEach(e => {
+    const mesh = new THREE.Mesh(
+        new THREE.BoxGeometry(e[0], e[1], e[2]),
+        frameMat
+    );
+    mesh.position.set(e[3], e[4], e[5]);
+    frameGroup.add(mesh);
+});
+
+// ======================================================
+// ② 右后部结构（倾斜板 + 连接柱）
+// ======================================================
+const rightGroup = new THREE.Group();
+rightGroup.position.set(0.8, 0.5, -0.4);
+scene.add(rightGroup);
+
+const plateMat = new THREE.MeshStandardMaterial({ color: 0x6a5acd });
+
+// 两个倾斜板（30°）
+for (let i = 0; i < 2; i++) {
+    const plate = new THREE.Mesh(
+        new THREE.BoxGeometry(1.5, 0.05, 0.6),
+        plateMat
+    );
+    plate.rotation.z = Math.PI / 6; // 30°
+    plate.position.set(0, i * 0.6, 0);
+    rightGroup.add(plate);
+}
+
+// 连接柱
+const pillar = new THREE.Mesh(
+    new THREE.BoxGeometry(0.1, 1.2, 0.1),
+    new THREE.MeshStandardMaterial({ color: 0xaaaaaa })
 );
-scene.add(base);
+pillar.position.set(0, 0.3, 0);
+rightGroup.add(pillar);
 
-// ===== 立柱 =====
-const column = new THREE.Mesh(
-    new THREE.BoxGeometry(0.3, 2, 0.3),
-    new THREE.MeshStandardMaterial({ color: 0x999999 })
+// ======================================================
+// ③ 左后部：可旋转模块（核心）
+// ======================================================
+const rotationGroup = new THREE.Group();
+rotationGroup.position.set(-0.8, 1.2, 0.4);
+scene.add(rotationGroup);
+
+// ---- 圆柱 A（主轴）----
+const cylA = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.2, 0.2, 0.6, 32),
+    new THREE.MeshStandardMaterial({ color: 0x333333 })
 );
-column.position.set(0, 1.25, 0);
-scene.add(column);
+rotationGroup.add(cylA);
 
-// ===== 旋转组（关键 pivot）=====
-const armGroup = new THREE.Group();
-armGroup.position.set(0, 2.3, 0);
-scene.add(armGroup);
-
-// ===== 臂 =====
-const arm = new THREE.Mesh(
-    new THREE.BoxGeometry(2, 0.2, 0.2),
-    new THREE.MeshStandardMaterial({ color: 0xff5555 })
+// ---- 圆柱 B（横向）----
+const cylB = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.08, 0.08, 1.2, 32),
+    new THREE.MeshStandardMaterial({ color: 0x555555 })
 );
-arm.position.set(1, 0, 0);
-armGroup.add(arm);
+cylB.rotation.z = Math.PI / 2;
+rotationGroup.add(cylB);
 
-// ===== 探头 =====
-const sensor = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.2, 0.2, 0.5, 32),
-    new THREE.MeshStandardMaterial({ color: 0x00aaff })
+// ---- 两个对称正方体 ----
+const cubeMat = new THREE.MeshStandardMaterial({ color: 0x00aaff });
+
+const cube1 = new THREE.Mesh(
+    new THREE.BoxGeometry(0.3, 0.3, 0.3),
+    cubeMat
 );
-sensor.rotation.z = Math.PI / 2;
-sensor.position.set(2, 0, 0);
-armGroup.add(sensor);
+cube1.position.set(0.6, 0, 0);
+rotationGroup.add(cube1);
 
-// ===== 更新旋转 =====
+const cube2 = cube1.clone();
+cube2.position.set(-0.6, 0, 0);
+rotationGroup.add(cube2);
+
+// ======================================================
+// ④ 旋转控制（你的 UI 保持不变）
+// ======================================================
 function updateRotation() {
     let vrs = parseInt(document.getElementById("vrs").value) || 0;
     let hrs = parseInt(document.getElementById("hrs").value) || 0;
 
-    armGroup.rotation.y = vrs * Math.PI / 180;
-    armGroup.rotation.x = hrs * Math.PI / 180;
+    rotationGroup.rotation.y = vrs * Math.PI / 180;
+    rotationGroup.rotation.x = hrs * Math.PI / 180;
 }
 
-// 监听输入（不影响原逻辑）
 document.getElementById("vrs").addEventListener("input", updateRotation);
 document.getElementById("hrs").addEventListener("input", updateRotation);
 
-// ===== 渲染循环 =====
+// ======================================================
+// 渲染循环
+// ======================================================
 function animate() {
     requestAnimationFrame(animate);
     renderer.render(scene, camera);
 }
 animate();
 
-// ===== 自适应尺寸 =====
+// 自适应
 window.addEventListener("resize", () => {
     camera.aspect = container.clientWidth / container.clientHeight;
     camera.updateProjectionMatrix();
