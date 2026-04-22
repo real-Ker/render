@@ -478,7 +478,7 @@
         const loader = new THREE.GLTFLoader();
         // 这里设置模型的路径: 如果用户有导出的 .glb 文件，请放在相对路径下，例如 "models/scatterometer.glb"
         // 为了演示并且不报404，先使用备用模型，同时给一个全局变量方便后期替换。
-        const modelUrl = './models/scatterometer.glb';  // <--- 请将你导出的 .glb 文件放到这个路径，如果没有则显示备用模型
+        const modelUrl = './scatterometer.glb';  // <--- 请将你导出的 .glb 文件放到这个路径，如果没有则显示备用模型
         
         let modelLoaded = false;
         loader.load(modelUrl, 
