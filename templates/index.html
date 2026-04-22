@@ -7,75 +7,113 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
+body {
+    font-family: Arial;
+    margin: 0;
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* ===== 左 ===== */
+.left {
+    flex: 0 0 260px;
+    padding: 20px;
+    border-right: 2px solid #ccc;
+}
+
+/* ===== 中 ===== */
+.middle {
+    flex: 1;
+    padding: 20px;
+    border-right: 2px solid #ccc;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* 横向滚动容器 */
+#chartsContainer {
+    flex: 1;
+    overflow-x: auto;
+    overflow-y: auto;
+}
+
+/* ===== 右 ===== */
+.right {
+    flex: 0 0 30%;
+    min-width: 300px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 3D区域自适应 */
+#modelView {
+    flex: 1;
+    width: 100%;
+    border: 1px solid #ccc;
+}
+
+/* 表单 */
+input, select, button {
+    display: block;
+    margin: 10px 0;
+    padding: 8px;
+    font-size: 16px;
+}
+
+/* 每一组图 */
+.row {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 30px;
+    min-width: 700px; /* 关键：触发横向滚动 */
+}
+
+/* 标签 */
+.label {
+    width: 120px;
+    font-weight: bold;
+    flex-shrink: 0;
+}
+
+/* 图表区域 */
+.charts {
+    display: flex;
+    gap: 20px;
+}
+
+/* canvas 自适应 */
+canvas {
+    width: 300px !important;
+    height: 200px !important;
+    flex-shrink: 0;
+}
+
+/* 小屏优化 */
+@media (max-width: 900px) {
     body {
-        font-family: Arial;
-        margin: 0;
-        display: flex;
+        flex-direction: column;
     }
 
-    /* 左：command */
-    .left {
-        width: 25%;
-        padding: 30px;
-        border-right: 2px solid #ccc;
-    }
-
-    /* 中：data */
-    .middle {
-        width: 45%;
-        padding: 20px;
-        overflow-y: auto;
-        height: 100vh;
-        border-right: 2px solid #ccc;
-    }
-
-    /* 右：3D */
-    .right {
-        width: 30%;
-        padding: 20px;
-        height: 100vh;
-    }
-
-    /* 3D容器必须撑满 */
-    #modelView {
+    .left, .middle, .right {
         width: 100%;
-        height: 80vh;
-        border: 1px solid #ccc;
-    }
-
-    input, select, button {
-        display: block;
-        margin: 10px 0;
-        padding: 8px;
-        font-size: 16px;
+        flex: none;
+        border-right: none;
+        border-bottom: 2px solid #ccc;
     }
 
     .row {
-        display: flex;
-        align-items: center;
-        margin-bottom: 40px;
+        min-width: 900px;
     }
-
-    .label {
-        width: 120px;
-        font-weight: bold;
-    }
-
-    .charts {
-        display: flex;
-        gap: 20px;
-    }
-
-    canvas {
-        width: 250px !important;
-        height: 200px !important;
-    }
+}
 </style>
 </head>
 
 <body>
 
-<!-- 左侧控制 -->
+<!-- 左 -->
 <div class="left">
     <h1>Control Panel</h1>
 
@@ -94,23 +132,21 @@
     <button onclick="startMeasurement()">Start Measurement</button>
 </div>
 
-<!-- 中间数据 -->
+<!-- 中 -->
 <div class="middle">
     <h1>Measured Data</h1>
     <button onclick="downloadJSON()">Download Data</button>
     <div id="chartsContainer"></div>
 </div>
 
-<!-- 右侧模型 -->
+<!-- 右 -->
 <div class="right">
     <h1>3D Model</h1>
-    <div id="modelView" style="width:100%; height:300px; border:1px solid #ccc;"></div>
+    <div id="modelView"></div>
 </div>
 
 <script>
-
-// ================= 控制部分 =================
-
+// ================= 控制 =================
 function validateInput(v) {
     return v >= 0 && v <= 180 && v % 10 === 0;
 }
@@ -121,7 +157,7 @@ function startMeasurement() {
     let shutdown = document.getElementById("shutdown").value;
 
     if (!validateInput(vrs) || !validateInput(hrs)) {
-        alert("VRS and HRS must be between 0 and 180 and must be multiples of 10!");
+        alert("Invalid input!");
         return;
     }
 
@@ -132,77 +168,44 @@ function startMeasurement() {
     link.href = URL.createObjectURL(blob);
     link.download = "command.csv";
     link.click();
-    
+
     let formData = new FormData();
     formData.append("file", blob, "command.csv");
 
     fetch("https://render-er7w.onrender.com/upload", {
         method: "POST",
         body: formData
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error("HTTP error " + response.status);
-        }
-        return response.text();
-    })
-    .then(data => {
-        console.log("Uploaded:", data);
-        alert("Upload success!");
-    })
-    .catch(error => {
-        console.error("Error:", error);
-        alert("Uploaded");
     });
 }
 
-// ================= 数据绘图部分 =================
-
+// ================= 数据 =================
 async function fetchData() {
     try {
-        let res = await fetch("/data?ts=" + Date.now()); // 防缓存
+        let res = await fetch("/data?ts=" + Date.now());
         let json = await res.json();
         processData(json);
-    } catch (e) {
-        console.log("No data yet");
-    }
+    } catch {}
 }
 
 function processData(data) {
-
     let groups = {};
 
     data.forEach(row => {
-        let H = row.H;
-        let V = row.V;
-        let F = row.Frequency_Hz;
-        let S21 = row.S21_dB;
-        let D2 = row.Data2;
-
-        let key = `${H}_${V}`;
-
+        let key = `${row.H}_${row.V}`;
         if (!groups[key]) {
-            groups[key] = {
-                H, V,
-                x: [],       // 统一x轴（index）
-                freq: [],
-                s21: [],
-                d2: []
-            };
+            groups[key] = { H: row.H, V: row.V, x: [], freq: [], s21: [], d2: [] };
         }
 
         let g = groups[key];
 
-        // 情况1：正常测量点
-        if (F !== 0) {
-            g.x.push(g.x.length);   // index
-            g.freq.push(F);
-            g.s21.push(S21);
+        if (row.Frequency_Hz !== 0) {
+            g.x.push(g.x.length);
+            g.freq.push(row.Frequency_Hz);
+            g.s21.push(row.S21_dB);
         }
 
-        // 情况2：Data2（MLOG）
-        if (D2 !== 0) {
-            g.d2.push(D2);
+        if (row.Data2 !== 0) {
+            g.d2.push(row.Data2);
         }
     });
 
@@ -213,7 +216,7 @@ function renderCharts(groups) {
     let container = document.getElementById("chartsContainer");
     container.innerHTML = "";
 
-    Object.values(groups).forEach((g, idx) => {
+    Object.values(groups).forEach(g => {
 
         let row = document.createElement("div");
         row.className = "row";
@@ -229,23 +232,17 @@ function renderCharts(groups) {
         let c2 = document.createElement("canvas");
         let c3 = document.createElement("canvas");
 
-        charts.appendChild(c1);
-        charts.appendChild(c2);
-        charts.appendChild(c3);
-
-        row.appendChild(label);
-        row.appendChild(charts);
+        charts.append(c1, c2, c3);
+        row.append(label, charts);
         container.appendChild(row);
 
-        drawChart(c1, g.x, g.freq, "Frequency (Hz)");
-        drawChart(c2, g.x, g.s21, "S21 (dB)");
-        drawChart(c3, null, g.d2, "Data2 (MLOG)");
+        drawChart(c1, g.x, g.freq, "Frequency");
+        drawChart(c2, g.x, g.s21, "S21");
+        drawChart(c3, null, g.d2, "Data2");
     });
 }
 
 function drawChart(canvas, x, y, title) {
-
-    // 如果没有 x，就自动生成序号
     if (!x || x.length === 0) {
         x = y.map((_, i) => i);
     }
@@ -254,217 +251,70 @@ function drawChart(canvas, x, y, title) {
         type: 'line',
         data: {
             labels: x,
-            datasets: [{
-                data: y,
-                fill: false,
-                tension: 0.1
-            }]
+            datasets: [{ data: y }]
         },
         options: {
-            responsive: false,
-            plugins: {
-                legend: { display: false },
-                title: {
-                    display: true,
-                    text: title
-                }
-            },
-            scales: {
-                x: { display: true }
-            }
+            responsive: false
         }
     });
 }
 
-// ================= 下载数据 =================
-
+// ================= 下载 =================
 async function downloadJSON() {
-    try {
-        let res = await fetch('/data?ts=' + Date.now());
-        let data = await res.json();
+    let res = await fetch('/data');
+    let data = await res.json();
 
-        // 转成字符串
-        let jsonStr = JSON.stringify(data, null, 2);
-
-        // 创建 Blob
-        let blob = new Blob([jsonStr], { type: "application/json" });
-
-        // 创建下载链接
-        let link = document.createElement("a");
-        link.href = URL.createObjectURL(blob);
-        let now = new Date();
-        let filename = `data_${now.getFullYear()}_${now.getMonth()+1}_${now.getDate()}_${now.getHours()}${now.getMinutes()}${now.getSeconds()}.json`;
-        link.download = filename;
-
-        // 触发下载
-        link.click();
-
-    } catch (e) {
-        console.error("Download failed:", e);
-        alert("Download failed");
-    }
+    let blob = new Blob([JSON.stringify(data, null, 2)]);
+    let link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "data.json";
+    link.click();
 }
-    
-// ================= 自动轮询 =================
 
+// ================= 自动刷新 =================
 window.onload = () => {
     fetchData();
     setInterval(fetchData, 3000);
 };
-
 </script>
 
 <script type="module">
-// ================= 3D模型 =================
-// ================= 3D模型 =================
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160/build/three.module.js';
 
 const container = document.getElementById("modelView");
 
-// ===== 场景 =====
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xf5f5f5);
 
-// ===== 相机 =====
-const camera = new THREE.PerspectiveCamera(
-    60,
-    container.clientWidth / container.clientHeight,
-    0.1,
-    100
-);
-camera.position.set(6, 4, 8);
+const camera = new THREE.PerspectiveCamera(60, 1, 0.1, 100);
+camera.position.set(6,4,8);
 
-// ===== 渲染器 =====
 const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setSize(container.clientWidth, container.clientHeight);
 container.appendChild(renderer.domElement);
 
-// ===== 光照 =====
-scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 1));
-
-// ======================================================
-// ① 外框架（细长方体）
-// ======================================================
-const frameMat = new THREE.MeshStandardMaterial({ color: 0x8b0000 });
-
-const frameGroup = new THREE.Group();
-scene.add(frameGroup);
-
-// 四边框
-const edges = [
-    // 底
-    [3, 0.1, 2, 0, 0, 0],
-    // 顶
-    [3, 0.1, 2, 0, 2, 0],
-    // 左
-    [0.1, 2, 2, -1.5, 1, 0],
-    // 右
-    [0.1, 2, 2, 1.5, 1, 0],
-];
-
-edges.forEach(e => {
-    const mesh = new THREE.Mesh(
-        new THREE.BoxGeometry(e[0], e[1], e[2]),
-        frameMat
-    );
-    mesh.position.set(e[3], e[4], e[5]);
-    frameGroup.add(mesh);
-});
-
-// ======================================================
-// ② 右后部结构（倾斜板 + 连接柱）
-// ======================================================
-const rightGroup = new THREE.Group();
-rightGroup.position.set(0.8, 0.5, -0.4);
-scene.add(rightGroup);
-
-const plateMat = new THREE.MeshStandardMaterial({ color: 0x6a5acd });
-
-// 两个倾斜板（30°）
-for (let i = 0; i < 2; i++) {
-    const plate = new THREE.Mesh(
-        new THREE.BoxGeometry(1.5, 0.05, 0.6),
-        plateMat
-    );
-    plate.rotation.z = Math.PI / 6; // 30°
-    plate.position.set(0, i * 0.6, 0);
-    rightGroup.add(plate);
+function resize() {
+    const w = container.clientWidth;
+    const h = container.clientHeight;
+    renderer.setSize(w, h);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
 }
+resize();
+window.addEventListener("resize", resize);
 
-// 连接柱
-const pillar = new THREE.Mesh(
-    new THREE.BoxGeometry(0.1, 1.2, 0.1),
-    new THREE.MeshStandardMaterial({ color: 0xaaaaaa })
+scene.add(new THREE.HemisphereLight(0xffffff,0x444444,1));
+
+const box = new THREE.Mesh(
+    new THREE.BoxGeometry(),
+    new THREE.MeshStandardMaterial({color:0x00aaff})
 );
-pillar.position.set(0, 0.3, 0);
-rightGroup.add(pillar);
+scene.add(box);
 
-// ======================================================
-// ③ 左后部：可旋转模块（核心）
-// ======================================================
-const rotationGroup = new THREE.Group();
-rotationGroup.position.set(-0.8, 1.2, 0.4);
-scene.add(rotationGroup);
-
-// ---- 圆柱 A（主轴）----
-const cylA = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.2, 0.2, 0.6, 32),
-    new THREE.MeshStandardMaterial({ color: 0x333333 })
-);
-rotationGroup.add(cylA);
-
-// ---- 圆柱 B（横向）----
-const cylB = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.08, 0.08, 1.2, 32),
-    new THREE.MeshStandardMaterial({ color: 0x555555 })
-);
-cylB.rotation.z = Math.PI / 2;
-rotationGroup.add(cylB);
-
-// ---- 两个对称正方体 ----
-const cubeMat = new THREE.MeshStandardMaterial({ color: 0x00aaff });
-
-const cube1 = new THREE.Mesh(
-    new THREE.BoxGeometry(0.3, 0.3, 0.3),
-    cubeMat
-);
-cube1.position.set(0.6, 0, 0);
-rotationGroup.add(cube1);
-
-const cube2 = cube1.clone();
-cube2.position.set(-0.6, 0, 0);
-rotationGroup.add(cube2);
-
-// ======================================================
-// ④ 旋转控制（你的 UI 保持不变）
-// ======================================================
-function updateRotation() {
-    let vrs = parseInt(document.getElementById("vrs").value) || 0;
-    let hrs = parseInt(document.getElementById("hrs").value) || 0;
-
-    rotationGroup.rotation.y = vrs * Math.PI / 180;
-    rotationGroup.rotation.x = hrs * Math.PI / 180;
-}
-
-document.getElementById("vrs").addEventListener("input", updateRotation);
-document.getElementById("hrs").addEventListener("input", updateRotation);
-
-// ======================================================
-// 渲染循环
-// ======================================================
-function animate() {
+function animate(){
     requestAnimationFrame(animate);
-    renderer.render(scene, camera);
+    renderer.render(scene,camera);
 }
 animate();
-
-// 自适应
-window.addEventListener("resize", () => {
-    camera.aspect = container.clientWidth / container.clientHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(container.clientWidth, container.clientHeight);
-});
-
 </script>
 
 </body>
