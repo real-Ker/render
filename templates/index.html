@@ -1,289 +1,775 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<title>Control Panel</title>
+    <meta charset="UTF-8">
+    <title>散射计数字孪生系统 - 3D可视化控制台</title>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- 引入 Three.js 核心库和扩展库 -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/"
+            }
+        }
+    </script>
 
-<style>
-    body {
-        font-family: Arial;
-        margin: 0;
-        display: flex;
-    }
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-    .left {
-        width: 30%;
-        padding: 30px;
-        border-right: 2px solid #ccc;
-    }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            display: flex;
+            background: #0a0e1a;
+            color: #e0e0e0;
+        }
 
-    .right {
-        width: 70%;
-        padding: 20px;
-        overflow-y: auto;
-        height: 100vh;
-    }
+        /* 左侧控制面板 - 科技感设计 */
+        .left {
+            width: 28%;
+            padding: 25px 20px;
+            border-right: 1px solid #2a3a5a;
+            background: linear-gradient(135deg, #0d1222 0%, #0a0e1a 100%);
+            box-shadow: 4px 0 20px rgba(0,0,0,0.5);
+            z-index: 10;
+            overflow-y: auto;
+            height: 100vh;
+        }
 
-    input, select, button {
-        display: block;
-        margin: 10px 0;
-        padding: 8px;
-        font-size: 16px;
-    }
+        .left h1 {
+            font-size: 1.6rem;
+            margin-bottom: 30px;
+            color: #3a86ff;
+            text-shadow: 0 0 10px rgba(58,134,255,0.3);
+            border-left: 4px solid #3a86ff;
+            padding-left: 15px;
+        }
 
-    .row {
-        display: flex;
-        align-items: center;
-        margin-bottom: 40px;
-    }
+        .control-group {
+            margin-bottom: 25px;
+            background: rgba(20, 30, 55, 0.6);
+            border-radius: 12px;
+            padding: 15px;
+            backdrop-filter: blur(4px);
+            border: 1px solid #2a3a60;
+        }
 
-    .label {
-        width: 120px;
-        font-weight: bold;
-    }
+        .control-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #aac8ff;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+        }
 
-    .charts {
-        display: flex;
-        gap: 20px;
-    }
+        input, select {
+            width: 100%;
+            background: #1a1f2e;
+            border: 1px solid #3a4a6e;
+            color: #fff;
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: all 0.2s;
+        }
 
-    canvas {
-        width: 250px !important;
-        height: 200px !important;
-    }
-</style>
+        input:focus, select:focus {
+            outline: none;
+            border-color: #3a86ff;
+            box-shadow: 0 0 8px rgba(58,134,255,0.3);
+        }
+
+        button {
+            background: linear-gradient(90deg, #2a5a9e, #1a3a6e);
+            border: none;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 30px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 15px;
+            transition: transform 0.1s, box-shadow 0.2s;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        button:hover {
+            background: linear-gradient(90deg, #3a6ebe, #2a4a8e);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(58,134,255,0.3);
+        }
+
+        button:active {
+            transform: translateY(1px);
+        }
+
+        /* 右侧主区域 */
+        .right {
+            width: 72%;
+            padding: 20px;
+            overflow-y: auto;
+            height: 100vh;
+            background: #0c1020;
+        }
+
+        .right-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #2a3a5a;
+        }
+
+        .right-header h1 {
+            font-size: 1.5rem;
+            color: #e0e0e0;
+        }
+
+        .download-btn {
+            width: auto;
+            background: linear-gradient(90deg, #2a6e5a, #1a4e3e);
+            padding: 8px 20px;
+            margin-top: 0;
+        }
+
+        /* 3D 模型展示区 */
+        .model-container {
+            background: #05070f;
+            border-radius: 16px;
+            margin-bottom: 30px;
+            border: 1px solid #2a3a60;
+            overflow: hidden;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+            position: relative;
+        }
+
+        .model-header {
+            background: #111725;
+            padding: 12px 20px;
+            font-weight: bold;
+            border-bottom: 1px solid #2a3a60;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .model-header span {
+            color: #3a86ff;
+            font-size: 0.85rem;
+            background: #1a2a4a;
+            padding: 4px 12px;
+            border-radius: 20px;
+        }
+
+        #canvas-container {
+            width: 100%;
+            height: 380px;
+            display: block;
+            background: radial-gradient(circle at center, #111725 0%, #05070f 100%);
+        }
+
+        /* 图表区域 */
+        .charts-section {
+            margin-top: 20px;
+        }
+
+        .charts-section h3 {
+            margin-bottom: 15px;
+            color: #aac8ff;
+            font-size: 1.2rem;
+            padding-left: 8px;
+            border-left: 3px solid #3a86ff;
+        }
+
+        .row {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 35px;
+            background: #111725;
+            border-radius: 16px;
+            padding: 15px;
+            border: 1px solid #2a3a5a;
+            transition: transform 0.2s;
+        }
+
+        .row:hover {
+            transform: translateX(4px);
+            border-color: #3a6eaa;
+        }
+
+        .label {
+            width: 140px;
+            font-weight: bold;
+            font-size: 1rem;
+            padding-top: 10px;
+            color: #ffaa66;
+        }
+
+        .charts {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        canvas {
+            width: 220px !important;
+            height: 180px !important;
+            background: #0a0e18;
+            border-radius: 12px;
+            padding: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        /* 滚动条美化 */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1a1f2e;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #3a6eaa;
+            border-radius: 4px;
+        }
+
+        .status-badge {
+            position: absolute;
+            bottom: 15px;
+            right: 20px;
+            background: rgba(0,0,0,0.6);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            color: #6eff9e;
+            font-family: monospace;
+            pointer-events: none;
+            z-index: 20;
+        }
+    </style>
 </head>
-
 <body>
 
-<!-- 左侧控制 -->
+<!-- 左侧控制面板 -->
 <div class="left">
-    <h1>Control Panel</h1>
+    <h1>📡 散射计数字孪生</h1>
+    
+    <div class="control-group">
+        <label>🔽 VRS (0–180, 步长10)</label>
+        <input type="number" id="vrs" min="0" max="180" step="10" value="0">
+    </div>
 
-    <label>VRS (0–180, multiple of 10)</label>
-    <input type="number" id="vrs" min="0" max="180" step="10">
+    <div class="control-group">
+        <label>🔄 HRS (0–180, 步长10)</label>
+        <input type="number" id="hrs" min="0" max="180" step="10" value="0">
+    </div>
 
-    <label>HRS (0–180, multiple of 10)</label>
-    <input type="number" id="hrs" min="0" max="180" step="10">
+    <div class="control-group">
+        <label>⏻ Shutdown</label>
+        <select id="shutdown">
+            <option>No</option>
+            <option>Yes</option>
+        </select>
+    </div>
 
-    <label>S (Shutdown)</label>
-    <select id="shutdown">
-        <option>No</option>
-        <option>Yes</option>
-    </select>
-
-    <button onclick="startMeasurement()">Start Measurement</button>
+    <button onclick="startMeasurement()">▶ 开始测量 / 上传指令</button>
+    
+    <div style="margin-top: 30px; font-size: 12px; text-align: center; opacity: 0.6;">
+        <p>⚡ 3D模型实时联动 | 数据自动刷新</p>
+    </div>
 </div>
 
-<!-- 右侧数据 -->
+<!-- 右侧内容区 -->
 <div class="right">
-    <h1>Measured Data</h1>
-    <button onclick="downloadJSON()">Download Data</button>
-    <div id="chartsContainer"></div>
+    <div class="right-header">
+        <h1>📊 实时测量数据 & 3D可视化</h1>
+        <button class="download-btn" onclick="downloadJSON()">📥 下载 JSON 数据</button>
+    </div>
+
+    <!-- 3D 模型嵌入容器 -->
+    <div class="model-container">
+        <div class="model-header">
+            <span>✨ 散射计 3D 数字孪生模型</span>
+            <span>🖱️ 鼠标拖拽旋转 / 右键平移 / 滚轮缩放</span>
+        </div>
+        <div id="canvas-container" style="width:100%; height:380px;"></div>
+        <div class="status-badge" id="model-status">🟢 模型加载中...</div>
+    </div>
+
+    <!-- 图表数据区 -->
+    <div class="charts-section">
+        <h3>📈 多维度测量曲线 (S21 / 频率 / MLOG)</h3>
+        <div id="chartsContainer"></div>
+    </div>
 </div>
 
 <script>
+    // ================= 3D 模型部分 (Three.js 嵌入) =================
+    // 等待 DOM 完全加载后再初始化 Three.js
+    let scene, camera, renderer, controls, modelObject, clock;
 
-// ================= 控制部分 =================
-
-function validateInput(v) {
-    return v >= 0 && v <= 180 && v % 10 === 0;
-}
-
-function startMeasurement() {
-    let vrs = parseInt(document.getElementById("vrs").value);
-    let hrs = parseInt(document.getElementById("hrs").value);
-    let shutdown = document.getElementById("shutdown").value;
-
-    if (!validateInput(vrs) || !validateInput(hrs)) {
-        alert("VRS and HRS must be between 0 and 180 and must be multiples of 10!");
-        return;
-    }
-
-    let csv = `vrs,hrs,shutdown\n${vrs/10},${hrs/10},${shutdown==="Yes"?1:0}`;
-    let blob = new Blob([csv], {type:"text/csv"});
-
-    let link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = "command.csv";
-    link.click();
-    
-    let formData = new FormData();
-    formData.append("file", blob, "command.csv");
-
-    fetch("https://render-er7w.onrender.com/upload", {
-        method: "POST",
-        body: formData
-    })
-    .then(response => response.text())
-    .then(data => {
-        console.log("Uploaded:", data);
-        alert("Upload success!");
-    })
-    .catch(error => {
-        console.error("Error:", error);
-        alert("Upload failed!");
-    });
-}
-
-// ================= 数据绘图部分 =================
-
-async function fetchData() {
-    try {
-        let res = await fetch("/data?ts=" + Date.now()); // 防缓存
-        let json = await res.json();
-        processData(json);
-    } catch (e) {
-        console.log("No data yet");
-    }
-}
-
-function processData(data) {
-
-    let groups = {};
-
-    data.forEach(row => {
-        let H = row.H;
-        let V = row.V;
-        let F = row.Frequency_Hz;
-        let S21 = row.S21_dB;
-        let D2 = row.Data2;
-
-        let key = `${H}_${V}`;
-
-        if (!groups[key]) {
-            groups[key] = {
-                H, V,
-                x: [],       // 统一x轴（index）
-                freq: [],
-                s21: [],
-                d2: []
-            };
+    function initThreeJS() {
+        const container = document.getElementById('canvas-container');
+        if (!container) return;
+        
+        // 获取容器尺寸
+        const width = container.clientWidth;
+        const height = container.clientHeight;
+        
+        // 创建场景 (深色星空风格)
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x050b1a);
+        scene.fog = new THREE.FogExp2(0x050b1a, 0.008);
+        
+        // 相机: 透视相机
+        camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+        camera.position.set(4, 3.5, 6);
+        camera.lookAt(0, 0.5, 0);
+        
+        // 渲染器
+        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+        renderer.setSize(width, height);
+        renderer.shadowMap.enabled = true; // 开启阴影
+        renderer.setPixelRatio(window.devicePixelRatio);
+        container.innerHTML = ''; // 清空可能残留
+        container.appendChild(renderer.domElement);
+        
+        // 控制器 (支持交互)
+        controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;       // 惯性
+        controls.dampingFactor = 0.05;
+        controls.autoRotate = true;
+        controls.autoRotateSpeed = 0.8;
+        controls.enableZoom = true;
+        controls.enablePan = true;
+        controls.target.set(0, 0.8, 0);
+        
+        // 添加光源系统，让模型质感更好
+        // 环境光
+        const ambientLight = new THREE.AmbientLight(0x404060, 0.65);
+        scene.add(ambientLight);
+        // 主光方向光
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
+        dirLight.position.set(2, 5, 3);
+        dirLight.castShadow = true;
+        dirLight.receiveShadow = true;
+        scene.add(dirLight);
+        // 辅助背光暖色
+        const backLight = new THREE.DirectionalLight(0xffaa66, 0.5);
+        backLight.position.set(-2, 1, -3);
+        scene.add(backLight);
+        // 冷色填充光
+        const fillLight = new THREE.PointLight(0x4488ff, 0.35);
+        fillLight.position.set(1, 1, 2);
+        scene.add(fillLight);
+        // 底部柔光
+        const fillUp = new THREE.PointLight(0x88aaff, 0.25);
+        fillUp.position.set(0, -1, 0);
+        scene.add(fillUp);
+        
+        // 辅助网格地面 (增强空间感)
+        const gridHelper = new THREE.GridHelper(12, 20, 0x88aaff, 0x335588);
+        gridHelper.position.y = -1.0;
+        scene.add(gridHelper);
+        
+        // 透明反射平面 (科技感)
+        const planeMat = new THREE.MeshStandardMaterial({ color: 0x2266aa, roughness: 0.3, metalness: 0.7, transparent: true, opacity: 0.2 });
+        const groundPlane = new THREE.Mesh(new THREE.PlaneGeometry(9, 9), planeMat);
+        groundPlane.rotation.x = -Math.PI / 2;
+        groundPlane.position.y = -1.05;
+        groundPlane.receiveShadow = true;
+        scene.add(groundPlane);
+        
+        // 星空粒子背景 (点缀)
+        const starGeometry = new THREE.BufferGeometry();
+        const starCount = 1500;
+        const starPositions = new Float32Array(starCount * 3);
+        for (let i = 0; i < starCount; i++) {
+            starPositions[i*3] = (Math.random() - 0.5) * 400;
+            starPositions[i*3+1] = (Math.random() - 0.5) * 120;
+            starPositions[i*3+2] = (Math.random() - 0.5) * 100 - 60;
         }
-
-        let g = groups[key];
-
-        // 情况1：正常测量点
-        if (F !== 0) {
-            g.x.push(g.x.length);   // index
-            g.freq.push(F);
-            g.s21.push(S21);
-        }
-
-        // 情况2：Data2（MLOG）
-        if (D2 !== 0) {
-            g.d2.push(D2);
-        }
-    });
-
-    renderCharts(groups);
-}
-
-function renderCharts(groups) {
-    let container = document.getElementById("chartsContainer");
-    container.innerHTML = "";
-
-    Object.values(groups).forEach((g, idx) => {
-
-        let row = document.createElement("div");
-        row.className = "row";
-
-        let label = document.createElement("div");
-        label.className = "label";
-        label.innerText = `VRS:${g.H} HRS:${g.V}`;
-
-        let charts = document.createElement("div");
-        charts.className = "charts";
-
-        let c1 = document.createElement("canvas");
-        let c2 = document.createElement("canvas");
-        let c3 = document.createElement("canvas");
-
-        charts.appendChild(c1);
-        charts.appendChild(c2);
-        charts.appendChild(c3);
-
-        row.appendChild(label);
-        row.appendChild(charts);
-        container.appendChild(row);
-
-        drawChart(c1, g.x, g.freq, "Frequency (Hz)");
-        drawChart(c2, g.x, g.s21, "S21 (dB)");
-        drawChart(c3, null, g.d2, "Data2 (MLOG)");
-    });
-}
-
-function drawChart(canvas, x, y, title) {
-
-    // 如果没有 x，就自动生成序号
-    if (!x || x.length === 0) {
-        x = y.map((_, i) => i);
-    }
-
-    new Chart(canvas, {
-        type: 'line',
-        data: {
-            labels: x,
-            datasets: [{
-                data: y,
-                fill: false,
-                tension: 0.1
-            }]
-        },
-        options: {
-            responsive: false,
-            plugins: {
-                legend: { display: false },
-                title: {
-                    display: true,
-                    text: title
-                }
+        starGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
+        const starMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 0.12, transparent: true, opacity: 0.6 });
+        const stars = new THREE.Points(starGeometry, starMaterial);
+        scene.add(stars);
+        
+        // 尝试加载 GLB 模型 (此处使用一个官方示例模型作为占位，你可以替换为你自己的 .glb 路径)
+        // 注意：你需要将导出的 .glb 文件放置在服务器的可访问路径下，例如 "./models/scatterometer.glb"
+        // 这里为了展示效果，加载 Three.js 示例中的一个精美机械环模型？不，为了通用且不依赖外链，使用内置几何体组合展示散射计风格。
+        // 由于用户没有提供具体 glb 文件，但为了体现“嵌入建模”的效果，我创建一个代表散射计风格的高科技组合体 (环形 + 圆柱 + 天线)，并在未来可替换为真实模型。
+        // 这样用户仍然可以替换为自己的 .glb 文件。
+        
+        const createFallbackModel = () => {
+            const group = new THREE.Group();
+            
+            // 主基座圆盘
+            const baseDisc = new THREE.Mesh(
+                new THREE.CylinderGeometry(1.6, 1.6, 0.2, 64),
+                new THREE.MeshStandardMaterial({ color: 0x3a6ea5, metalness: 0.7, roughness: 0.3, emissive: 0x112233 })
+            );
+            baseDisc.castShadow = true;
+            baseDisc.receiveShadow = true;
+            baseDisc.position.y = -0.3;
+            group.add(baseDisc);
+            
+            // 中央圆柱 (主体)
+            const centerPillar = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.9, 1.0, 1.2, 32),
+                new THREE.MeshStandardMaterial({ color: 0x5a8ecf, metalness: 0.6, roughness: 0.4 })
+            );
+            centerPillar.castShadow = true;
+            centerPillar.position.y = 0.3;
+            group.add(centerPillar);
+            
+            // 顶盖半球
+            const topCap = new THREE.Mesh(
+                new THREE.SphereGeometry(0.65, 32, 32, 0, Math.PI * 2, 0, Math.PI/2),
+                new THREE.MeshStandardMaterial({ color: 0x88aaff, metalness: 0.8, roughness: 0.2, emissive: 0x224466 })
+            );
+            topCap.position.y = 0.95;
+            topCap.castShadow = true;
+            group.add(topCap);
+            
+            // 环形阵列 (散射计特征)
+            const ringGeo = new THREE.TorusGeometry(1.2, 0.08, 64, 200);
+            const ringMat = new THREE.MeshStandardMaterial({ color: 0xffaa66, metalness: 0.9, emissive: 0x442200 });
+            const ring = new THREE.Mesh(ringGeo, ringMat);
+            ring.rotation.x = Math.PI / 2;
+            ring.position.y = 0.1;
+            ring.castShadow = true;
+            group.add(ring);
+            
+            const ring2 = new THREE.Mesh(ringGeo, ringMat);
+            ring2.rotation.x = Math.PI / 2;
+            ring2.position.y = 0.6;
+            ring2.scale.set(0.9, 0.9, 0.9);
+            group.add(ring2);
+            
+            // 四个支柱/天线
+            const antennaMat = new THREE.MeshStandardMaterial({ color: 0xdd8844, metalness: 0.5 });
+            for (let i = 0; i < 4; i++) {
+                const angle = (i * Math.PI * 2) / 4;
+                const px = Math.cos(angle) * 1.3;
+                const pz = Math.sin(angle) * 1.3;
+                const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.15, 0.8, 8), antennaMat);
+                pillar.position.set(px, 0.2, pz);
+                pillar.castShadow = true;
+                group.add(pillar);
+                
+                const antennaBall = new THREE.Mesh(new THREE.SphereGeometry(0.18, 16, 16), new THREE.MeshStandardMaterial({ color: 0xff9966, emissive: 0x442200 }));
+                antennaBall.position.set(px, 0.65, pz);
+                antennaBall.castShadow = true;
+                group.add(antennaBall);
+            }
+            
+            return group;
+        };
+        
+        // 尝试加载用户自定义模型，如果失败则使用备用组合体
+        const loader = new THREE.GLTFLoader();
+        // 这里设置模型的路径: 如果用户有导出的 .glb 文件，请放在相对路径下，例如 "models/scatterometer.glb"
+        // 为了演示并且不报404，先使用备用模型，同时给一个全局变量方便后期替换。
+        const modelUrl = './models/scatterometer.glb';  // <--- 请将你导出的 .glb 文件放到这个路径，如果没有则显示备用模型
+        
+        let modelLoaded = false;
+        loader.load(modelUrl, 
+            (gltf) => {
+                modelObject = gltf.scene;
+                scene.add(modelObject);
+                modelLoaded = true;
+                document.getElementById('model-status').innerHTML = '✅ 真实模型已加载 (散射计)';
+                // 自动调整相机适配模型包围盒
+                setTimeout(() => {
+                    const box = new THREE.Box3().setFromObject(modelObject);
+                    const center = box.getCenter(new THREE.Vector3());
+                    const size = box.getSize(new THREE.Vector3());
+                    const maxDim = Math.max(size.x, size.y, size.z);
+                    const fov = camera.fov * (Math.PI / 180);
+                    let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
+                    cameraZ *= 1.3;
+                    camera.position.set(center.x, center.y + maxDim * 0.2, center.z + cameraZ);
+                    controls.target.set(center.x, center.y + maxDim * 0.2, center.z);
+                    controls.update();
+                }, 100);
             },
-            scales: {
-                x: { display: true }
+            (xhr) => {
+                // 加载进度
+                let percent = Math.floor(xhr.loaded / xhr.total * 100);
+                document.getElementById('model-status').innerHTML = `🟡 加载模型中 ${percent}%`;
+            },
+            (error) => {
+                console.warn("未找到自定义模型，使用备用高科技组合体展示孪生设备", error);
+                // 使用备用模型
+                modelObject = createFallbackModel();
+                scene.add(modelObject);
+                document.getElementById('model-status').innerHTML = '🌟 数字孪生模型 (示意) | 可替换 .glb';
+                // 调整备用模型的阴影和位置
+                modelObject.position.y = -0.2;
+                // 简单适配相机
+                const box = new THREE.Box3().setFromObject(modelObject);
+                const center = box.getCenter(new THREE.Vector3());
+                const size = box.getSize(new THREE.Vector3());
+                const maxDim = Math.max(size.x, size.y, size.z);
+                const fov = camera.fov * (Math.PI / 180);
+                let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
+                cameraZ *= 1.4;
+                camera.position.set(center.x, center.y + maxDim * 0.2, center.z + cameraZ);
+                controls.target.set(center.x, center.y + maxDim * 0.2, center.z);
+                controls.update();
+            }
+        );
+        
+        // 添加一个简单的辅助轴线光晕 (科技感)
+        const axesHelper = new THREE.AxesHelper(2.5);
+        axesHelper.material.transparent = true;
+        axesHelper.material.opacity = 0.12;
+        scene.add(axesHelper);
+        
+        clock = new THREE.Clock();
+        
+        // 动画循环
+        function animate() {
+            requestAnimationFrame(animate);
+            if (controls) controls.update(); // 自动旋转由 OrbitControls 的 autoRotate 属性控制
+            if (renderer && scene && camera) {
+                renderer.render(scene, camera);
             }
         }
-    });
-}
+        animate();
+        
+        // 窗口尺寸自适应 (监听容器变化)
+        window.addEventListener('resize', onContainerResize);
+        function onContainerResize() {
+            const newWidth = container.clientWidth;
+            const newHeight = container.clientHeight;
+            if (camera) {
+                camera.aspect = newWidth / newHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(newWidth, newHeight);
+            }
+        }
+        
+        // 简单轮询检测容器大小变化 (某些情况下 resize 不触发)
+        const resizeObserver = new ResizeObserver(() => onContainerResize());
+        resizeObserver.observe(container);
+    }
+    
+    // 确保 Three.js 导入后再初始化
+    window.onload = () => {
+        // 延迟一点确保容器存在并且 import map 生效
+        setTimeout(() => {
+            initThreeJS();
+        }, 100);
+        // 原有的数据轮询逻辑
+        fetchData();
+        setInterval(fetchData, 3500);
+    };
+    
+    // ================= 控制部分 (原有逻辑扩展) =================
+    function validateInput(v) {
+        return v >= 0 && v <= 180 && v % 10 === 0;
+    }
 
-// ================= 下载数据 =================
+    function startMeasurement() {
+        let vrs = parseInt(document.getElementById("vrs").value);
+        let hrs = parseInt(document.getElementById("hrs").value);
+        let shutdown = document.getElementById("shutdown").value;
 
-async function downloadJSON() {
-    try {
-        let res = await fetch('/data?ts=' + Date.now());
-        let data = await res.json();
+        if (!validateInput(vrs) || !validateInput(hrs)) {
+            alert("VRS and HRS must be between 0 and 180 and must be multiples of 10!");
+            return;
+        }
 
-        // 转成字符串
-        let jsonStr = JSON.stringify(data, null, 2);
+        let csv = `vrs,hrs,shutdown\n${vrs/10},${hrs/10},${shutdown==="Yes"?1:0}`;
+        let blob = new Blob([csv], {type:"text/csv"});
 
-        // 创建 Blob
-        let blob = new Blob([jsonStr], { type: "application/json" });
-
-        // 创建下载链接
         let link = document.createElement("a");
         link.href = URL.createObjectURL(blob);
-        let now = new Date();
-        let filename = `data_${now.getFullYear()}_${now.getMonth()+1}_${now.getDate()}_${now.getHours()}${now.getMinutes()}${now.getSeconds()}.json`;
-        link.download = filename;
-
-        // 触发下载
+        link.download = "command.csv";
         link.click();
+        
+        let formData = new FormData();
+        formData.append("file", blob, "command.csv");
 
-    } catch (e) {
-        console.error("Download failed:", e);
-        alert("Download failed");
+        fetch("https://render-er7w.onrender.com/upload", {
+            method: "POST",
+            body: formData
+        })
+        .then(response => response.text())
+        .then(data => {
+            console.log("Uploaded:", data);
+            alert("Upload success! 指令已发送至孪生系统.");
+        })
+        .catch(error => {
+            console.error("Error:", error);
+            alert("Upload failed!");
+        });
     }
-}
-    
-// ================= 自动轮询 =================
 
-window.onload = () => {
-    fetchData();
-    setInterval(fetchData, 3000);
-};
+    // ================= 数据绘图部分 (增强显示) =================
+    async function fetchData() {
+        try {
+            let res = await fetch("/data?ts=" + Date.now());
+            let json = await res.json();
+            processData(json);
+        } catch (e) {
+            console.log("No data yet or API not ready");
+        }
+    }
 
+    function processData(data) {
+        let groups = {};
+
+        data.forEach(row => {
+            let H = row.H;
+            let V = row.V;
+            let F = row.Frequency_Hz;
+            let S21 = row.S21_dB;
+            let D2 = row.Data2;
+
+            let key = `${H}_${V}`;
+
+            if (!groups[key]) {
+                groups[key] = {
+                    H, V,
+                    x: [],
+                    freq: [],
+                    s21: [],
+                    d2: []
+                };
+            }
+
+            let g = groups[key];
+
+            if (F !== 0) {
+                g.x.push(g.x.length);
+                g.freq.push(F);
+                g.s21.push(S21);
+            }
+
+            if (D2 !== 0) {
+                g.d2.push(D2);
+            }
+        });
+
+        renderCharts(groups);
+    }
+
+    function renderCharts(groups) {
+        let container = document.getElementById("chartsContainer");
+        if (!container) return;
+        container.innerHTML = "";
+
+        Object.values(groups).forEach((g, idx) => {
+            let row = document.createElement("div");
+            row.className = "row";
+
+            let label = document.createElement("div");
+            label.className = "label";
+            label.innerText = `📡 VRS:${g.H}  HRS:${g.V}`;
+
+            let charts = document.createElement("div");
+            charts.className = "charts";
+
+            let c1 = document.createElement("canvas");
+            let c2 = document.createElement("canvas");
+            let c3 = document.createElement("canvas");
+
+            charts.appendChild(c1);
+            charts.appendChild(c2);
+            charts.appendChild(c3);
+
+            row.appendChild(label);
+            row.appendChild(charts);
+            container.appendChild(row);
+
+            drawChart(c1, g.x, g.freq, "Frequency (Hz)");
+            drawChart(c2, g.x, g.s21, "S21 (dB)");
+            drawChart(c3, null, g.d2, "Data2 (MLOG)");
+        });
+    }
+
+    function drawChart(canvas, x, y, title) {
+        if (!y || y.length === 0) {
+            // 无数据时显示空白
+            new Chart(canvas, {
+                type: 'line',
+                data: { labels: [0], datasets: [{ data: [0] }] },
+                options: { plugins: { title: { display: true, text: title + " (无数据)" } } }
+            });
+            return;
+        }
+        if (!x || x.length === 0) {
+            x = y.map((_, i) => i);
+        }
+        new Chart(canvas, {
+            type: 'line',
+            data: {
+                labels: x,
+                datasets: [{
+                    data: y,
+                    fill: false,
+                    tension: 0.1,
+                    borderColor: '#3a86ff',
+                    backgroundColor: 'transparent'
+                }]
+            },
+            options: {
+                responsive: false,
+                plugins: {
+                    legend: { display: false },
+                    title: { display: true, text: title, color: '#ccc' }
+                },
+                scales: { x: { display: true, ticks: { color: '#aaa' } }, y: { ticks: { color: '#aaa' } } }
+            }
+        });
+    }
+
+    // 下载 JSON 数据
+    async function downloadJSON() {
+        try {
+            let res = await fetch('/data?ts=' + Date.now());
+            let data = await res.json();
+            let jsonStr = JSON.stringify(data, null, 2);
+            let blob = new Blob([jsonStr], { type: "application/json" });
+            let link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            let now = new Date();
+            let filename = `data_${now.getFullYear()}_${now.getMonth()+1}_${now.getDate()}_${now.getHours()}${now.getMinutes()}${now.getSeconds()}.json`;
+            link.download = filename;
+            link.click();
+        } catch (e) {
+            console.error("Download failed:", e);
+            alert("Download failed");
+        }
+    }
+</script>
+
+<!-- 手动导入 OrbitControls 和 GLTFLoader (因为 import map 已定义) -->
+<script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+    // 挂载到 window 以便 initThreeJS 中使用
+    window.THREE = THREE;
+    window.OrbitControls = OrbitControls;
+    window.GLTFLoader = GLTFLoader;
+    // 重新触发初始化，确保 Three 全局可用
+    if (document.getElementById('canvas-container')) {
+        // 等待上面脚本执行后调用
+        setTimeout(() => {
+            if (typeof initThreeJS === 'function') initThreeJS();
+        }, 200);
+    }
 </script>
 
 </body>
