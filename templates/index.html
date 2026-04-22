@@ -42,7 +42,7 @@
         height: 80vh;
         border: 1px solid #ccc;
     }
-    
+
     input, select, button {
         display: block;
         margin: 10px 0;
@@ -94,12 +94,16 @@
     <button onclick="startMeasurement()">Start Measurement</button>
 </div>
 
-<!-- 右侧数据 -->
-<div class="right">
+<!-- 中间数据 -->
+<div class="middle">
     <h1>Measured Data</h1>
     <button onclick="downloadJSON()">Download Data</button>
     <div id="chartsContainer"></div>
-    <h2>3D Model</h2>
+</div>
+
+<!-- 右侧模型 -->
+<div class="right">
+    <h1>3D Model</h1>
     <div id="modelView" style="width:100%; height:300px; border:1px solid #ccc;"></div>
 </div>
 
