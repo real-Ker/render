@@ -63,12 +63,17 @@
 
     .charts {
         display: flex;
+        flex-wrap: wrap;
         gap: 20px;
     }
 
-    canvas {
-        width: 250px !important;
-        height: 200px !important;
+    .chart-wrapper {
+        position: relative;
+        width: 280px;
+        height: 220px;
+        border: 1px solid #ddd;
+        padding: 5px;
+        background: white;
     }
 </style>
 </head>
@@ -161,10 +166,18 @@ function startMeasurement() {
 async function fetchData() {
     try {
         let res = await fetch("/data?ts=" + Date.now()); // 防缓存
+        if (!res.ok) {
+            throw new Error(`HTTP error! status: ${res.status}`);
+        }
         let json = await res.json();
-        processData(json);
+        console.log("Data fetched successfully:", json);
+        if (json && json.length > 0) {
+            processData(json);
+        } else {
+            console.log("No data received or empty data array");
+        }
     } catch (e) {
-        console.log("No data yet");
+        console.log("Error fetching data:", e);
     }
 }
 
@@ -186,7 +199,6 @@ function processData(data) {
         if (!groups[key]) {
             groups[key] = {
                 H, V,
-                // x: [],       // 统一x轴（index）
                 freq: [],
                 s11_m:[],
                 s11_p:[],
@@ -197,16 +209,11 @@ function processData(data) {
 
         let g = groups[key];
 
-        // 情况1：正常测量点
-        if (F !== 0) {
-            // g.x.push(g.x.length);   // index
+        // 添加数据点
+        if (F !== 0 || S11_M !== 0 || S21_M !== 0) {
             g.freq.push(F);
             g.s11_m.push(S11_M);
             g.s21_m.push(S21_M);
-        }
-
-        // 情况2：Data2（MLOG）
-        if (D2 !== 0) {
             g.s11_p.push(S11_P);
             g.s21_p.push(S21_P);
         }
@@ -231,46 +238,60 @@ function renderCharts(groups) {
         let charts = document.createElement("div");
         charts.className = "charts";
 
+        // Chart 1
+        let wrapper1 = document.createElement("div");
+        wrapper1.className = "chart-wrapper";
         let c1 = document.createElement("canvas");
-        let c2 = document.createElement("canvas");
-        // let c3 = document.createElement("canvas");
-        // let c4 = document.createElement("canvas");
+        wrapper1.appendChild(c1);
+        charts.appendChild(wrapper1);
 
-        charts.appendChild(c1);
-        charts.appendChild(c2);
-        // charts.appendChild(c3);
-        // charts.appendChild(c4);
+        // Chart 2
+        let wrapper2 = document.createElement("div");
+        wrapper2.className = "chart-wrapper";
+        let c2 = document.createElement("canvas");
+        wrapper2.appendChild(c2);
+        charts.appendChild(wrapper2);
 
         row.appendChild(label);
         row.appendChild(charts);
         container.appendChild(row);
 
-        // drawChart(c1, g.x, g.freq, "Frequency (Hz)");
-        drawChart(c1, g.freq, g.s11_m, "S11 (dB)");
-        drawChart(c2, g.freq, g.s21_m, "S21 (dB)");
-        // drawChart(c2, null, g.s21_p, "S21 (dB)");
+        // 确保数据存在才绘制
+        if (g.freq && g.freq.length > 0) {
+            drawChart(c1, g.freq, g.s11_m, "S11 Magnitude (dB)");
+            drawChart(c2, g.freq, g.s21_m, "S21 Magnitude (dB)");
+        }
     });
 }
 
 function drawChart(canvas, x, y, title) {
 
-    // // 如果没有 x，就自动生成序号
-    // if (!x || x.length === 0) {
-    //     x = y.map((_, i) => i);
-    // }
+    // 生成索引标签（0, 1, 2, ... 或显示部分频率值）
+    let labels = x.map((freq, idx) => {
+        // 每10个点显示一个频率标签，其他显示为空
+        if (idx % 10 === 0) {
+            return freq.toFixed(0);
+        }
+        return '';
+    });
 
     new Chart(canvas, {
         type: 'line',
         data: {
-            labels: x,
+            labels: labels,
             datasets: [{
                 data: y,
                 fill: false,
-                tension: 0.1
+                tension: 0.1,
+                borderColor: 'rgb(75, 192, 192)',
+                backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                pointRadius: 1,
+                pointHoverRadius: 4
             }]
         },
         options: {
             responsive: false,
+            maintainAspectRatio: false,
             plugins: {
                 legend: { display: false },
                 title: {
@@ -284,6 +305,13 @@ function drawChart(canvas, x, y, title) {
                     title: {
                         display: true,
                         text: 'Frequency (Hz)'
+                    }
+                },
+                y: {
+                    display: true,
+                    title: {
+                        display: true,
+                        text: title
                     }
                 }
             }
@@ -341,8 +369,29 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xf5f5f5);
 
 // ===== 相机 =====
-const camera = new THREE.PerspectiveCamera(60, container.clientWidth/container.clientHeight, 0.1, 100);
+const camera = new THREE.PerspectiveCamera(60, container.clientWidth/container.clientHeight, 0.1, 1000);
 camera.position.set(5, 4, 6);
+
+// ===== 自适应相机位置函数 =====
+function adjustCameraToFitModel() {
+    // 计算模型的边界框
+    const box = new THREE.Box3().setFromObject(model);
+    const size = box.getSize(new THREE.Vector3());
+    const center = box.getCenter(new THREE.Vector3());
+    
+    // 计算需要的相机距离
+    const maxDim = Math.max(size.x, size.y, size.z);
+    const fov = camera.fov * (Math.PI / 180); // 转换为弧度
+    let cameraDistance = Math.abs(maxDim / 2 / Math.tan(fov / 2));
+    
+    // 添加一些边距（1.5倍）
+    cameraDistance *= 1.5;
+    
+    // 更新相机位置，使其指向模型中心
+    const direction = camera.position.clone().normalize();
+    camera.position.copy(center).addScaledVector(direction, cameraDistance);
+    camera.lookAt(center);
+}
 
 // ===== 渲染器 =====
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -417,10 +466,16 @@ function updateRotation() {
 
     // HRS：中轴
     hrsPivot.rotation.y = hrs * Math.PI / 180;
+    
+    // 每次旋转后自动调整相机
+    adjustCameraToFitModel();
 }
 
 document.getElementById("vrs").addEventListener("input", updateRotation);
 document.getElementById("hrs").addEventListener("input", updateRotation);
+
+// 初始化时调整一次相机
+adjustCameraToFitModel();
 
 // ===== 渲染 =====
 function animate() {
@@ -434,6 +489,7 @@ window.addEventListener("resize", () => {
     camera.aspect = container.clientWidth/container.clientHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(container.clientWidth, container.clientHeight);
+    adjustCameraToFitModel();
 });
 </script>
 
