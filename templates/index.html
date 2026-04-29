@@ -69,11 +69,12 @@
 
     .chart-wrapper {
         position: relative;
-        width: 280px;
-        height: 220px;
+        min-width: 280px;
+        min-height: 260px;
         border: 1px solid #ddd;
-        padding: 5px;
+        padding: 10px;
         background: white;
+        box-sizing: border-box;
     }
 </style>
 </head>
@@ -244,6 +245,8 @@ function renderCharts(groups) {
         let c1 = document.createElement("canvas");
         wrapper1.appendChild(c1);
         charts.appendChild(wrapper1);
+        c1.style.width = "100%";
+        c1.style.height = "100%";
 
         // Chart 2
         let wrapper2 = document.createElement("div");
@@ -251,6 +254,8 @@ function renderCharts(groups) {
         let c2 = document.createElement("canvas");
         wrapper2.appendChild(c2);
         charts.appendChild(wrapper2);
+        c2.style.width = "100%";
+        c2.style.height = "100%";
 
         row.appendChild(label);
         row.appendChild(charts);
@@ -290,8 +295,16 @@ function drawChart(canvas, x, y, title) {
             }]
         },
         options: {
-            responsive: false,
+            responsive: true,
             maintainAspectRatio: false,
+            layout:{
+                padding: {
+                    left: 20,
+                    right: 10,
+                    top: 10,
+                    bottom: 10
+                }
+            },
             plugins: {
                 legend: { display: false },
                 title: {
