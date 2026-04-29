@@ -176,8 +176,10 @@ function processData(data) {
         let H = row.H;
         let V = row.V;
         let F = row.Frequency_Hz;
-        let S21 = row.S21_dB;
-        let D2 = row.Data2;
+        let S11_M = row.S11_Mag_dB;
+        let S11_P = row.S11_Phase;
+        let S21_M = row.S21_Mag_dB;
+        let S21_P = row.S21_Phase;
 
         let key = `${H}_${V}`;
 
@@ -186,8 +188,10 @@ function processData(data) {
                 H, V,
                 // x: [],       // 统一x轴（index）
                 freq: [],
-                s21: [],
-                d2: []
+                s11_m:[],
+                s11_p:[],
+                s21_m:[],
+                s21_p:[]
             };
         }
 
@@ -197,12 +201,14 @@ function processData(data) {
         if (F !== 0) {
             // g.x.push(g.x.length);   // index
             g.freq.push(F);
-            g.s21.push(S21);
+            g.s11_m.push(S11_M);
+            g.s21_m.push(S21_M);
         }
 
         // 情况2：Data2（MLOG）
         if (D2 !== 0) {
-            g.d2.push(D2);
+            g.s11_p.push(S11_P);
+            g.s21_p.push(S21_P);
         }
     });
 
@@ -228,18 +234,21 @@ function renderCharts(groups) {
         let c1 = document.createElement("canvas");
         let c2 = document.createElement("canvas");
         // let c3 = document.createElement("canvas");
+        // let c4 = document.createElement("canvas");
 
         charts.appendChild(c1);
         charts.appendChild(c2);
         // charts.appendChild(c3);
+        // charts.appendChild(c4);
 
         row.appendChild(label);
         row.appendChild(charts);
         container.appendChild(row);
 
         // drawChart(c1, g.x, g.freq, "Frequency (Hz)");
-        drawChart(c1, g.freq, g.s21, "S21 (dB)");
-        drawChart(c2, null, g.d2, "Data2 (MLOG)");
+        drawChart(c1, g.freq, g.s11_m, "S11 (dB)");
+        drawChart(c2, g.freq, g.s21_m, "S21 (dB)");
+        // drawChart(c2, null, g.s21_p, "S21 (dB)");
     });
 }
 
@@ -270,7 +279,13 @@ function drawChart(canvas, x, y, title) {
                 }
             },
             scales: {
-                x: { display: true }
+                x: { 
+                    display: true,
+                    title: {
+                        display: true,
+                        text: 'Frequency (Hz)'
+                    }
+                }
             }
         }
     });
