@@ -15,20 +15,18 @@
 
     /* 左：command */
     .left {
-        width: 20%;
+        width: 25%;
         padding: 30px;
         border-right: 2px solid #ccc;
-        background: #f9f9f9;
     }
 
     /* 中：data */
     .middle {
-        width: 50%;
+        width: 45%;
         padding: 20px;
         overflow-y: auto;
         height: 100vh;
         border-right: 2px solid #ccc;
-        background: #fafafa;
     }
 
     /* 右：3D */
@@ -36,8 +34,6 @@
         width: 30%;
         padding: 20px;
         height: 100vh;
-        background: #f9f9f9;
-        overflow-y: auto;
     }
 
     /* 3D容器必须撑满 */
@@ -56,49 +52,28 @@
 
     .row {
         display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        margin-bottom: 30px;
-        padding: 15px;
-        background: white;
-        border-radius: 4px;
+        align-items: center;
+        margin-bottom: 40px;
     }
 
     .label {
-        width: 100%;
+        width: 120px;
         font-weight: bold;
-        font-size: 16px;
-        margin-bottom: 15px;
-        padding-bottom: 10px;
-        border-bottom: 2px solid #ddd;
     }
 
     .charts {
         display: flex;
         flex-wrap: wrap;
-        gap: 15px;
-        width: 100%;
+        gap: 20px;
     }
 
     .chart-wrapper {
         position: relative;
-        width: 450px;
-        height: 280px;
-        border: 2px solid #333;
-        padding: 10px;
+        width: 280px;
+        height: 220px;
+        border: 1px solid #ddd;
+        padding: 5px;
         background: white;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-
-    .chart-wrapper canvas {
-        max-width: 100%;
-        max-height: 100%;
-    }
-
-    #chartsContainer {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
     }
 </style>
 </head>
@@ -291,18 +266,14 @@ function renderCharts(groups) {
 
 function drawChart(canvas, x, y, title) {
 
-    // 生成索引标签（只显示部分频率值避免拥挤）
+    // 生成索引标签（0, 1, 2, ... 或显示部分频率值）
     let labels = x.map((freq, idx) => {
-        // 每15个点显示一个频率标签
-        if (idx % 15 === 0) {
-            return (freq / 1000).toFixed(1); // 转换为 GHz
+        // 每10个点显示一个频率标签，其他显示为空
+        if (idx % 10 === 0) {
+            return freq.toFixed(0);
         }
         return '';
     });
-
-    // 设置 X 轴范围 5-9 GHz (5000-9000 MHz)
-    let xMin = 5000;  // 5 GHz
-    let xMax = 9000;  // 9 GHz
 
     new Chart(canvas, {
         type: 'line',
@@ -311,56 +282,36 @@ function drawChart(canvas, x, y, title) {
             datasets: [{
                 data: y,
                 fill: false,
-                tension: 0.2,
+                tension: 0.1,
                 borderColor: 'rgb(75, 192, 192)',
-                borderWidth: 2,
-                backgroundColor: 'rgba(75, 192, 192, 0.05)',
-                pointRadius: 2,
-                pointBackgroundColor: 'rgb(75, 192, 192)',
-                pointHoverRadius: 5,
-                pointHoverBackgroundColor: 'rgb(255, 99, 132)'
+                backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                pointRadius: 1,
+                pointHoverRadius: 4
             }]
         },
         options: {
-            responsive: true,
-            maintainAspectRatio: true,
+            responsive: false,
+            maintainAspectRatio: false,
             plugins: {
                 legend: { display: false },
                 title: {
                     display: true,
-                    text: title,
-                    font: { size: 14, weight: 'bold' }
+                    text: title
                 }
             },
             scales: {
-                x: {
-                    type: 'linear',
+                x: { 
                     display: true,
-                    min: xMin,
-                    max: xMax,
-                    ticks: {
-                        stepSize: 500 // 每 500 MHz 一个刻度
-                    },
                     title: {
                         display: true,
-                        text: 'Frequency (GHz)',
-                        font: { size: 12, weight: 'bold' }
-                    },
-                    grid: {
-                        display: true,
-                        color: 'rgba(0, 0, 0, 0.1)'
+                        text: 'Frequency (Hz)'
                     }
                 },
                 y: {
                     display: true,
                     title: {
                         display: true,
-                        text: title,
-                        font: { size: 12, weight: 'bold' }
-                    },
-                    grid: {
-                        display: true,
-                        color: 'rgba(0, 0, 0, 0.1)'
+                        text: title
                     }
                 }
             }
