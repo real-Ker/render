@@ -184,7 +184,7 @@ function processData(data) {
         if (!groups[key]) {
             groups[key] = {
                 H, V,
-                x: [],       // 统一x轴（index）
+                // x: [],       // 统一x轴（index）
                 freq: [],
                 s21: [],
                 d2: []
@@ -195,7 +195,7 @@ function processData(data) {
 
         // 情况1：正常测量点
         if (F !== 0) {
-            g.x.push(g.x.length);   // index
+            // g.x.push(g.x.length);   // index
             g.freq.push(F);
             g.s21.push(S21);
         }
@@ -227,28 +227,28 @@ function renderCharts(groups) {
 
         let c1 = document.createElement("canvas");
         let c2 = document.createElement("canvas");
-        let c3 = document.createElement("canvas");
+        // let c3 = document.createElement("canvas");
 
         charts.appendChild(c1);
         charts.appendChild(c2);
-        charts.appendChild(c3);
+        // charts.appendChild(c3);
 
         row.appendChild(label);
         row.appendChild(charts);
         container.appendChild(row);
 
-        drawChart(c1, g.x, g.freq, "Frequency (Hz)");
-        drawChart(c2, g.x, g.s21, "S21 (dB)");
-        drawChart(c3, null, g.d2, "Data2 (MLOG)");
+        // drawChart(c1, g.x, g.freq, "Frequency (Hz)");
+        drawChart(c1, g.freq, g.s21, "S21 (dB)");
+        drawChart(c2, null, g.d2, "Data2 (MLOG)");
     });
 }
 
 function drawChart(canvas, x, y, title) {
 
-    // 如果没有 x，就自动生成序号
-    if (!x || x.length === 0) {
-        x = y.map((_, i) => i);
-    }
+    // // 如果没有 x，就自动生成序号
+    // if (!x || x.length === 0) {
+    //     x = y.map((_, i) => i);
+    // }
 
     new Chart(canvas, {
         type: 'line',
@@ -315,7 +315,7 @@ window.onload = () => {
 </script>
 
 <script type="module">
-// ================= 3D模型 =================
+
 // ================= 3D模型 =================
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160/build/three.module.js';
 
