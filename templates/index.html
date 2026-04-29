@@ -315,8 +315,8 @@ window.onload = () => {
 </script>
 
 <script type="module">
+// ================= 3D轮询 =================
 
-// ================= 3D模型 =================
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160/build/three.module.js';
 
 const container = document.getElementById("modelView");
@@ -326,132 +326,88 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xf5f5f5);
 
 // ===== 相机 =====
-const camera = new THREE.PerspectiveCamera(
-    60,
-    container.clientWidth / container.clientHeight,
-    0.1,
-    100
-);
-camera.position.set(6, 4, 8);
+const camera = new THREE.PerspectiveCamera(60, container.clientWidth/container.clientHeight, 0.1, 100);
+camera.position.set(5, 4, 6);
 
 // ===== 渲染器 =====
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(container.clientWidth, container.clientHeight);
 container.appendChild(renderer.domElement);
 
-// ===== 光照 =====
+// ===== 光 =====
 scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 1));
 
 // ======================================================
-// ① 外框架（细长方体）
+//  ① VRS轴（底部水平轴）
 // ======================================================
-const frameMat = new THREE.MeshStandardMaterial({ color: 0x8b0000 });
+const basePivot = new THREE.Group();
+basePivot.position.set(0, 0, 0); // 地面位置
+scene.add(basePivot);
 
-const frameGroup = new THREE.Group();
-scene.add(frameGroup);
+// ======================================================
+//  ② HRS轴（T中轴）
+// ======================================================
+const hrsPivot = new THREE.Group();
+hrsPivot.position.set(0, 1, 0); // T 的底部到中轴高度
+basePivot.add(hrsPivot);
 
-// 四边框
-const edges = [
-    // 底
-    [3, 0.1, 2, 0, 0, 0],
-    // 顶
-    [3, 0.1, 2, 0, 2, 0],
-    // 左
-    [0.1, 2, 2, -1.5, 1, 0],
-    // 右
-    [0.1, 2, 2, 1.5, 1, 0],
-];
+// ======================================================
+//  ③ 模型主体
+// ======================================================
+const model = new THREE.Group();
+hrsPivot.add(model);
 
-edges.forEach(e => {
-    const mesh = new THREE.Mesh(
-        new THREE.BoxGeometry(e[0], e[1], e[2]),
-        frameMat
+// ===== 材质 =====
+const metal = new THREE.MeshStandardMaterial({ color: 0x888888 });
+const shellMat = new THREE.MeshStandardMaterial({ color: 0x3366ff });
+
+// ===== T竖杆 =====
+const vertical = new THREE.Mesh(
+    new THREE.BoxGeometry(0.3, 2, 0.2),
+    metal
+);
+vertical.position.set(0, 1, 0);
+model.add(vertical);
+
+// ===== T横杆 =====
+const horizontal = new THREE.Mesh(
+    new THREE.BoxGeometry(2, 0.3, 0.2),
+    metal
+);
+horizontal.position.set(0, 2, 0);
+model.add(horizontal);
+
+// ===== 两个壳（对称）=====
+function createShell(x) {
+    const shell = new THREE.Mesh(
+        new THREE.BoxGeometry(0.8, 0.5, 0.4),
+        shellMat
     );
-    mesh.position.set(e[3], e[4], e[5]);
-    frameGroup.add(mesh);
-});
-
-// ======================================================
-// ② 右后部结构（倾斜板 + 连接柱）
-// ======================================================
-const rightGroup = new THREE.Group();
-rightGroup.position.set(0.8, 0.5, -0.4);
-scene.add(rightGroup);
-
-const plateMat = new THREE.MeshStandardMaterial({ color: 0x6a5acd });
-
-// 两个倾斜板（30°）
-for (let i = 0; i < 2; i++) {
-    const plate = new THREE.Mesh(
-        new THREE.BoxGeometry(1.5, 0.05, 0.6),
-        plateMat
-    );
-    plate.rotation.z = Math.PI / 6; // 30°
-    plate.position.set(0, i * 0.6, 0);
-    rightGroup.add(plate);
+    shell.position.set(x, 2, 0.3); // 在同一面（+Z）
+    return shell;
 }
 
-// 连接柱
-const pillar = new THREE.Mesh(
-    new THREE.BoxGeometry(0.1, 1.2, 0.1),
-    new THREE.MeshStandardMaterial({ color: 0xaaaaaa })
-);
-pillar.position.set(0, 0.3, 0);
-rightGroup.add(pillar);
+model.add(createShell(0.6));
+model.add(createShell(-0.6));
 
 // ======================================================
-// ③ 左后部：可旋转模块（核心）
-// ======================================================
-const rotationGroup = new THREE.Group();
-rotationGroup.position.set(-0.8, 1.2, 0.4);
-scene.add(rotationGroup);
-
-// ---- 圆柱 A（主轴）----
-const cylA = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.2, 0.2, 0.6, 32),
-    new THREE.MeshStandardMaterial({ color: 0x333333 })
-);
-rotationGroup.add(cylA);
-
-// ---- 圆柱 B（横向）----
-const cylB = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.08, 0.08, 1.2, 32),
-    new THREE.MeshStandardMaterial({ color: 0x555555 })
-);
-cylB.rotation.z = Math.PI / 2;
-rotationGroup.add(cylB);
-
-// ---- 两个对称正方体 ----
-const cubeMat = new THREE.MeshStandardMaterial({ color: 0x00aaff });
-
-const cube1 = new THREE.Mesh(
-    new THREE.BoxGeometry(0.3, 0.3, 0.3),
-    cubeMat
-);
-cube1.position.set(0.6, 0, 0);
-rotationGroup.add(cube1);
-
-const cube2 = cube1.clone();
-cube2.position.set(-0.6, 0, 0);
-rotationGroup.add(cube2);
-
-// ======================================================
-// ④ 旋转控制（你的 UI 保持不变）
+//  控制旋转
 // ======================================================
 function updateRotation() {
-    let vrs = parseInt(document.getElementById("vrs").value) || 0;
-    let hrs = parseInt(document.getElementById("hrs").value) || 0;
+    let vrs = parseFloat(document.getElementById("vrs").value) || 0;
+    let hrs = parseFloat(document.getElementById("hrs").value) || 0;
 
-    rotationGroup.rotation.y = vrs * Math.PI / 180;
-    rotationGroup.rotation.x = hrs * Math.PI / 180;
+    // VRS：底部轴
+    basePivot.rotation.x = vrs * Math.PI / 180;
+
+    // HRS：中轴
+    hrsPivot.rotation.y = hrs * Math.PI / 180;
 }
 
 document.getElementById("vrs").addEventListener("input", updateRotation);
 document.getElementById("hrs").addEventListener("input", updateRotation);
 
-// ======================================================
-// 渲染循环
-// ======================================================
+// ===== 渲染 =====
 function animate() {
     requestAnimationFrame(animate);
     renderer.render(scene, camera);
@@ -460,11 +416,10 @@ animate();
 
 // 自适应
 window.addEventListener("resize", () => {
-    camera.aspect = container.clientWidth / container.clientHeight;
+    camera.aspect = container.clientWidth/container.clientHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(container.clientWidth, container.clientHeight);
 });
-
 </script>
 
 </body>
