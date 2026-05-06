@@ -257,10 +257,14 @@ function processData(data) {
             g.s21_p.push(S21_P);
         }
 
-        updateModelRotationFromData(
-            row.V,
-            row.H
-        );
+        let last = data[data.length - 1];
+
+        if (last) {
+            updateModelRotationFromData(
+                last.V,
+                last.H
+            );
+        }
     });
 
     renderCharts(groups);
@@ -419,12 +423,6 @@ async function downloadJSON() {
     }
 }
 
-// ================= 3D模型旋转更新（供轮询调用） =================
-
-function updateModelRotationFromData(vrs, hrs) {
-    basePivot.rotation.x = vrs * Math.PI / 180;
-    hrsPivot.rotation.y = hrs * Math.PI / 180;
-}
 
 // ================= 自动轮询 =================
 
@@ -549,6 +547,11 @@ model.add(createShell(-0.6));
 
 // document.getElementById("vrs").addEventListener("input", updateRotation);
 // document.getElementById("hrs").addEventListener("input", updateRotation);
+
+window.updateModelRotationFromData = function(vrs, hrs) {
+    basePivot.rotation.x = vrs * Math.PI / 180;
+    hrsPivot.rotation.y = hrs * Math.PI / 180;
+};
 
 // 初始化时调整一次相机
 setupFixedCamera();
