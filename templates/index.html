@@ -223,6 +223,8 @@ function processData(data) {
     let groups = {};
 
     data.forEach(row => {
+        let Target_H = row.Target_H;
+        let Target_V = row.Target_V;
         let H = row.H;
         let V = row.V;
         let F = row.Frequency_Hz;
@@ -231,11 +233,11 @@ function processData(data) {
         let S21_M = row.S21_Mag_dB;
         let S21_P = row.S21_Phase;
 
-        let key = `${H}_${V}`;
+        let key = `${Target_H}_${Target_V}_${H}_${V}`;
 
         if (!groups[key]) {
             groups[key] = {
-                H, V,
+                Target_H, Target_V, H, V,
                 freq: [],
                 s11_m:[],
                 s11_p:[],
@@ -263,10 +265,6 @@ function renderCharts(groups) {
     let container = document.getElementById("chartsContainer");
     container.innerHTML = "";
 
-    // 👉 获取 command 输入值
-    let cmdVRS = document.getElementById("vrs").value || "-";
-    let cmdHRS = document.getElementById("hrs").value || "-";
-
     Object.values(groups).forEach((g) => {
 
         let row = document.createElement("div");
@@ -282,12 +280,12 @@ function renderCharts(groups) {
 
         info.innerHTML = `
             <div><b>Command</b></div>
-            <div>VRS: ${cmdVRS}</div>
-            <div>HRS: ${cmdHRS}</div>
+            <div>HRS: ${g.Target_H}</div>
+            <div>VRS: ${g.Target_V}</div>
             <hr>
             <div><b>Measured</b></div>
-            <div>VRS: ${g.H}</div>
-            <div>HRS: ${g.V}</div>
+            <div>HRS: ${g.H}</div>
+            <div>VRS: ${g.V}</div>
             <hr>
             <div>S11 Phase: ${s11_phase}</div>
             <div>S21 Phase: ${s21_phase}</div>
