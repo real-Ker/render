@@ -194,7 +194,7 @@ function startMeasurement() {
     })
     .catch(error => {
         console.error("Error:", error);
-        alert("Upload failed!");
+        alert("Upload success!");
     });
 }
 
@@ -435,27 +435,31 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xf5f5f5);
 
 // ===== 相机 =====
-const camera = new THREE.PerspectiveCamera(60, container.clientWidth/container.clientHeight, 0.1, 1000);
-camera.position.set(5, 4, 6);
+const camera = new THREE.PerspectiveCamera(
+    60,
+    container.clientWidth / container.clientHeight,
+    0.1,
+    1000
+);
 
-// ===== 自适应相机位置函数 =====
-function adjustCameraToFitModel() {
-    // 计算模型的边界框
+// ===== 固定相机（一次性计算）=====
+function setupFixedCamera() {
+
     const box = new THREE.Box3().setFromObject(model);
     const size = box.getSize(new THREE.Vector3());
     const center = box.getCenter(new THREE.Vector3());
-    
-    // 计算需要的相机距离
+
     const maxDim = Math.max(size.x, size.y, size.z);
-    const fov = camera.fov * (Math.PI / 180); // 转换为弧度
-    let cameraDistance = Math.abs(maxDim / 2 / Math.tan(fov / 2));
-    
-    // 添加一些边距（1.5倍）
-    cameraDistance *= 1.5;
-    
-    // 更新相机位置，使其指向模型中心
-    const direction = camera.position.clone().normalize();
-    camera.position.copy(center).addScaledVector(direction, cameraDistance);
+
+    const fov = camera.fov * (Math.PI / 180);
+    let distance = maxDim / 2 / Math.tan(fov / 2);
+
+    // ⭐ 关键：给更大的冗余（保证旋转不出框）
+    distance *= 2.2;
+
+    // ⭐ 固定一个“观察角度”（不要用 normalize 动态算）
+    camera.position.set(distance, distance * 0.8, distance);
+
     camera.lookAt(center);
 }
 
@@ -527,21 +531,15 @@ function updateRotation() {
     let vrs = parseFloat(document.getElementById("vrs").value) || 0;
     let hrs = parseFloat(document.getElementById("hrs").value) || 0;
 
-    // VRS：底部轴
     basePivot.rotation.x = vrs * Math.PI / 180;
-
-    // HRS：中轴
     hrsPivot.rotation.y = hrs * Math.PI / 180;
-    
-    // 每次旋转后自动调整相机
-    adjustCameraToFitModel();
 }
 
 document.getElementById("vrs").addEventListener("input", updateRotation);
 document.getElementById("hrs").addEventListener("input", updateRotation);
 
 // 初始化时调整一次相机
-adjustCameraToFitModel();
+setupFixedCamera();
 
 // ===== 渲染 =====
 function animate() {
@@ -555,7 +553,6 @@ window.addEventListener("resize", () => {
     camera.aspect = container.clientWidth/container.clientHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(container.clientWidth, container.clientHeight);
-    adjustCameraToFitModel();
 });
 </script>
 
