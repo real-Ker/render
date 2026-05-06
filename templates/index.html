@@ -256,6 +256,11 @@ function processData(data) {
             g.s11_p.push(S11_P);
             g.s21_p.push(S21_P);
         }
+
+        updateModelRotationFromData(
+            row.Target_V * 10,
+            row.Target_H * 10
+        );
     });
 
     renderCharts(groups);
@@ -413,7 +418,14 @@ async function downloadJSON() {
         alert("Download failed");
     }
 }
-    
+
+// ================= 3D模型旋转更新（供轮询调用） =================
+
+function updateModelRotationFromData(vrs, hrs) {
+    basePivot.rotation.x = vrs * Math.PI / 180;
+    hrsPivot.rotation.y = hrs * Math.PI / 180;
+}
+
 // ================= 自动轮询 =================
 
 window.onload = () => {
@@ -527,16 +539,16 @@ model.add(createShell(-0.6));
 // ======================================================
 //  控制旋转
 // ======================================================
-function updateRotation() {
-    let vrs = parseFloat(document.getElementById("vrs").value) || 0;
-    let hrs = parseFloat(document.getElementById("hrs").value) || 0;
+// function updateRotation() {
+//     let vrs = parseFloat(document.getElementById("vrs").value) || 0;
+//     let hrs = parseFloat(document.getElementById("hrs").value) || 0;
 
-    basePivot.rotation.x = vrs * Math.PI / 180;
-    hrsPivot.rotation.y = hrs * Math.PI / 180;
-}
+//     basePivot.rotation.x = vrs * Math.PI / 180;
+//     hrsPivot.rotation.y = hrs * Math.PI / 180;
+// }
 
-document.getElementById("vrs").addEventListener("input", updateRotation);
-document.getElementById("hrs").addEventListener("input", updateRotation);
+// document.getElementById("vrs").addEventListener("input", updateRotation);
+// document.getElementById("hrs").addEventListener("input", updateRotation);
 
 // 初始化时调整一次相机
 setupFixedCamera();
