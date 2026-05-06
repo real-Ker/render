@@ -385,26 +385,41 @@ scene.background = new THREE.Color(0xf5f5f5);
 const camera = new THREE.PerspectiveCamera(60, container.clientWidth/container.clientHeight, 0.1, 1000);
 camera.position.set(5, 4, 6);
 
-// ===== 自适应相机位置函数 =====
-function adjustCameraToFitModel() {
-    // 计算模型的边界框
-    const box = new THREE.Box3().setFromObject(model);
-    const size = box.getSize(new THREE.Vector3());
-    const center = box.getCenter(new THREE.Vector3());
+// ===== 计算固定相机位置 =====
+function calculateFixedCameraDistance() {
+    // 临时计算所有可能旋转状态下的最大尺寸
+    const positions = [];
     
-    // 计算需要的相机距离
-    const maxDim = Math.max(size.x, size.y, size.z);
-    const fov = camera.fov * (Math.PI / 180); // 转换为弧度
+    // 测试不同的旋转角度组合，找出最大的包围范围
+    for (let vrs = 0; vrs <= 180; vrs += 30) {
+        for (let hrs = 0; hrs <= 180; hrs += 30) {
+            basePivot.rotation.x = vrs * Math.PI / 180;
+            hrsPivot.rotation.y = hrs * Math.PI / 180;
+            
+            const box = new THREE.Box3().setFromObject(model);
+            const size = box.getSize(new THREE.Vector3());
+            const maxDim = Math.max(size.x, size.y, size.z);
+            positions.push(maxDim);
+        }
+    }
+    
+    // 重置旋转
+    basePivot.rotation.x = 0;
+    hrsPivot.rotation.y = 0;
+    
+    // 计算相机距离
+    const maxDim = Math.max(...positions);
+    const fov = camera.fov * (Math.PI / 180);
     let cameraDistance = Math.abs(maxDim / 2 / Math.tan(fov / 2));
     
-    // 添加一些边距（1.5倍）
-    cameraDistance *= 1.5;
-    
-    // 更新相机位置，使其指向模型中心
-    const direction = camera.position.clone().normalize();
-    camera.position.copy(center).addScaledVector(direction, cameraDistance);
-    camera.lookAt(center);
+    return cameraDistance * 1.8; // 添加边距系数
 }
+
+// ===== 初始化固定相机 =====
+const fixedDistance = calculateFixedCameraDistance();
+const fixedDirection = new THREE.Vector3(5, 4, 6).normalize();
+camera.position.copy(fixedDirection.multiplyScalar(fixedDistance));
+camera.lookAt(0, 1, 0);
 
 // ===== 渲染器 =====
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -479,16 +494,10 @@ function updateRotation() {
 
     // HRS：中轴
     hrsPivot.rotation.y = hrs * Math.PI / 180;
-    
-    // 每次旋转后自动调整相机
-    adjustCameraToFitModel();
 }
 
 document.getElementById("vrs").addEventListener("input", updateRotation);
 document.getElementById("hrs").addEventListener("input", updateRotation);
-
-// 初始化时调整一次相机
-adjustCameraToFitModel();
 
 // ===== 渲染 =====
 function animate() {
@@ -497,12 +506,11 @@ function animate() {
 }
 animate();
 
-// 自适应
+// 自适应窗口大小
 window.addEventListener("resize", () => {
     camera.aspect = container.clientWidth/container.clientHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(container.clientWidth, container.clientHeight);
-    adjustCameraToFitModel();
 });
 </script>
 
