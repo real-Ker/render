@@ -121,11 +121,11 @@
 <div class="left">
     <h1>Control Panel</h1>
 
-    <label>VRS (0–180, multiple of 10)</label>
-    <input type="number" id="vrs" min="0" max="180" step="10">
-
-    <label>HRS (0–180, multiple of 10)</label>
+    <label>Horizontal Rotation Angle (0–180, multiple of 10)</label>
     <input type="number" id="hrs" min="0" max="180" step="10">
+
+    <label>Vertical Rotation Angle (0–180, multiple of 10)</label>
+    <input type="number" id="vrs" min="0" max="180" step="10">
 
     <label>S (Shutdown)</label>
     <select id="shutdown">
@@ -289,12 +289,12 @@ function renderCharts(groups) {
 
         info.innerHTML = `
             <div><b>Command</b></div>
-            <div>HRS: ${g.Target_H}</div>
-            <div>VRS: ${g.Target_V}</div>
+            <div>Horizontal Rotation Angle: ${g.Target_H}</div>
+            <div>Vertical Rotation Angle: ${g.Target_V}</div>
             <hr>
             <div><b>Measured</b></div>
-            <div>HRS: ${g.H}</div>
-            <div>VRS: ${g.V}</div>
+            <div>Horizontal Rotation Angle: ${g.H}</div>
+            <div>Vertical Rotation Angle: ${g.V}</div>
         `;
 
         // ================= 右侧图 =================
