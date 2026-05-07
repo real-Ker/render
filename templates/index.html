@@ -230,6 +230,17 @@ function processData(data) {
     let groups = {};
 
     data.forEach(row => {
+        if(
+            row.Target_H === undefined || 
+            row.Target_V === undefined || 
+            row.H === undefined || 
+            row.V === undefined ||
+            row.Frequency_Hz === undefined
+        ) {
+            return; // 跳过缺失关键字段的行
+        }
+
+
         let Target_H = row.Target_H;
         let Target_V = row.Target_V;
         let H = row.H;
