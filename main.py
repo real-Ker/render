@@ -47,7 +47,7 @@ async def upload(file: UploadFile = File(...)):
 @app.get("/data")
 def get_data():
     # 返回最新50条
-    return data_store[-50:]
+    return data_store
 
 # ✅ 下载数据（CSV）
 @app.get("/download")
