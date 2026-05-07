@@ -227,7 +227,7 @@ function processData(data) {
         let Target_V = row.Target_V;
         let H = row.H;
         let V = row.V;
-        let F = row.Frequency_Hz;
+        let F = row.Frequency_Hz / 1e9; // 转成 GHz
         let S11_M = row.S11_Mag_dB;
         // let S11_P = row.S11_Phase;
         let S21_M = row.S21_Mag_dB;
@@ -376,7 +376,7 @@ function drawChart(canvas, x, y, title) {
                     display: true,
                     title: {
                         display: true,
-                        text: 'Frequency (Hz)'
+                        text: 'Frequency (GHz)'
                     }
                 },
                 y: {
