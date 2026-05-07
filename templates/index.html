@@ -501,6 +501,10 @@ basePivot.add(hrsPivot);
 const model = new THREE.Group();
 hrsPivot.add(model);
 
+// ===== 坐标轴辅助线 =====
+const axesHelper = new THREE.AxesHelper(3);
+scene.add(axesHelper);
+
 // ===== 材质 =====
 const metal = new THREE.MeshStandardMaterial({ color: 0x888888 });
 const shellMat = new THREE.MeshStandardMaterial({ color: 0x3366ff });
