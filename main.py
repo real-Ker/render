@@ -2,6 +2,7 @@ from fastapi import FastAPI, UploadFile, File
 from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.requests import Request
+from fastapi.responses import JSONResponse
 import pandas as pd
 import io
 
@@ -10,7 +11,7 @@ app = FastAPI()
 # 前端页面
 templates = Jinja2Templates(directory="templates")
 
-# 👉 内存存储数据
+# 内存存储数据
 data_store = []
 
 # 首页（网页）
@@ -49,7 +50,7 @@ def get_data():
     # 返回最新50条
     return data_store
 
-# ✅ 下载数据（CSV）
+# 下载数据（CSV）
 @app.get("/download")
 def download_data():
     if not data_store:
@@ -73,3 +74,16 @@ def download_data():
             "Content-Disposition": "attachment; filename=data.csv"
         }
     )
+
+# 清除数据（前端用）
+@app.post("/clear-data")
+async def clear_data():
+
+    global data_store
+
+    data_store = []
+
+    return JSONResponse({
+        "status": "success",
+        "message": "Data cleared"
+    })
