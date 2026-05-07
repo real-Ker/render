@@ -264,10 +264,17 @@ function processData(data) {
                 last.V,
                 last.H
             );
-        }
-
-        if (V == Target_V && H == Target_H) {
-            alert(`Measurement complete for Target_H=${Target_H}, Target_V=${Target_V}`);
+            
+            // 检查是否到达目标位置
+            if (last.H === last.Target_H && last.V === last.Target_V) {
+                console.log("Measurement complete! H=" + last.H + ", V=" + last.V);
+                
+                // 自动下载数据
+                downloadJSON();
+                
+                // 弹出提示框
+                alert("Measurement complete!\nData has been downloaded automatically.\n\nTarget position: H=" + last.Target_H + ", V=" + last.Target_V);
+            }
         }
     });
 
