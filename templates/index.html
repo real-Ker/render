@@ -139,7 +139,10 @@
 <!-- 中间数据 -->
 <div class="middle">
     <h1>Measured Data</h1>
-    <button onclick="downloadJSON()">Download Data</button>
+    <div style="display:flex; gap:10px; margin-bottom:20px;">
+        <button onclick="downloadJSON()">Download Data</button>
+        <button onclick="clearData()">Clear Data</button>
+    </div>
     <div id="chartsContainer"></div>
 </div>
 
@@ -481,6 +484,36 @@ async function downloadJSON() {
     }
 }
 
+// ================= 清空数据 =================
+
+async function clearData() {
+    // 防止误操作
+    let confirmClear = confirm("Are you sure you want to clear all measured data?");
+
+    if (!confirmClear) return;
+
+    try {
+        let res = await fetch('/clear-data', {
+            method: 'POST'
+        });
+
+        if (!res.ok) {
+            throw new Error("Failed to clear data");
+        }
+
+        // 清空前端图表
+        document.getElementById("chartsContainer").innerHTML = "";
+
+        // 清空 chartMap
+        chartMap = {};
+
+        alert("Data cleared successfully!");
+
+    } catch (e) {
+        console.error(e);
+        alert("Failed to clear data");
+    }
+}
 
 // ================= 自动轮询 =================
 
