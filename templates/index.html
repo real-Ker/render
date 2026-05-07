@@ -332,11 +332,8 @@ function drawChart(canvas, x, y, title) {
 
     // 生成索引标签（0, 1, 2, ... 或显示部分频率值）
     let labels = x.map((freq, idx) => {
-        // 每10个点显示一个频率标签，其他显示为空
-        if (idx % 10 === 0) {
-            return freq.toFixed(2);
-        }
-        return '';
+        // 显示所有点的频率标签
+        return freq.toFixed(2);
     });
 
     new Chart(canvas, {
