@@ -265,6 +265,10 @@ function processData(data) {
                 last.H
             );
         }
+
+        if (V == Target_V && H == Target_H) {
+            alert(`Measurement complete for Target_H=${Target_H}, Target_V=${Target_V}`);
+        }
     });
 
     renderCharts(groups);
