@@ -158,8 +158,8 @@ function validateInput(v) {
 }
 
 function startMeasurement() {
-    let vrs = parseInt(document.getElementById("vrs").value);
-    let hrs = parseInt(document.getElementById("hrs").value);
+    let vrs = parseInt(document.getElementById("vrs").value) + 10;
+    let hrs = parseInt(document.getElementById("hrs").value) + 10;
     let shutdown = document.getElementById("shutdown").value;
 
     if (!validateInput(vrs) || !validateInput(hrs)) {
