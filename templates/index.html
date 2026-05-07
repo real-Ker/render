@@ -334,7 +334,7 @@ function drawChart(canvas, x, y, title) {
     let labels = x.map((freq, idx) => {
         // 每10个点显示一个频率标签，其他显示为空
         if (idx % 10 === 0) {
-            return freq.toFixed(0);
+            return freq.toFixed(2);
         }
         return '';
     });
