@@ -204,6 +204,8 @@ function startMeasurement() {
 }
 
 // ================= 数据绘图部分 =================
+// 保存所有 chart 实例
+let chartMap = {};
 
 async function fetchData() {
     try {
@@ -288,23 +290,69 @@ function processData(data) {
 }
 
 function renderCharts(groups) {
+
     let container = document.getElementById("chartsContainer");
-    container.innerHTML = "";
 
     Object.values(groups).forEach((g) => {
 
-        let row = document.createElement("div");
-        row.className = "data-row";
+        let key = `${g.Target_H}_${g.Target_V}_${g.H}_${g.V}`;
 
-        // ================= 左侧信息 =================
-        let info = document.createElement("div");
-        info.className = "info-panel";
+        // =====================================================
+        // 第一次创建 DOM
+        // =====================================================
+        if (!chartMap[key]) {
 
-        // 取 phase（取最后一个点，或平均都行）
-        // let s11_phase = g.s11_p.length ? g.s11_p[g.s11_p.length - 1] : "-";
-        // let s21_phase = g.s21_p.length ? g.s21_p[g.s21_p.length - 1] : "-";
+            let row = document.createElement("div");
+            row.className = "data-row";
+            row.id = "row_" + key;
 
-        info.innerHTML = `
+            // ================= 左侧信息 =================
+            let info = document.createElement("div");
+            info.className = "info-panel";
+            info.id = "info_" + key;
+
+            // ================= 右侧图 =================
+            let chartPanel = document.createElement("div");
+            chartPanel.className = "chart-panel";
+
+            // S11
+            let box1 = document.createElement("div");
+            box1.className = "chart-box";
+
+            let c1 = document.createElement("canvas");
+            box1.appendChild(c1);
+
+            // S21
+            let box2 = document.createElement("div");
+            box2.className = "chart-box";
+
+            let c2 = document.createElement("canvas");
+            box2.appendChild(c2);
+
+            chartPanel.appendChild(box1);
+            chartPanel.appendChild(box2);
+
+            row.appendChild(info);
+            row.appendChild(chartPanel);
+
+            container.appendChild(row);
+
+            // 创建 chart
+            let chart1 = createChart(c1, "S11 Magnitude (dB)");
+            let chart2 = createChart(c2, "S21 Magnitude (dB)");
+
+            chartMap[key] = {
+                info,
+                chart1,
+                chart2
+            };
+        }
+
+        // =====================================================
+        // 更新信息
+        // =====================================================
+
+        chartMap[key].info.innerHTML = `
             <div><b>Command</b></div>
             <div>Horizontal Rotation Angle: ${g.Target_H}</div>
             <div>Vertical Rotation Angle: ${g.Target_V}</div>
@@ -314,62 +362,47 @@ function renderCharts(groups) {
             <div>Vertical Rotation Angle: ${g.V}</div>
         `;
 
-        // ================= 右侧图 =================
-        let chartPanel = document.createElement("div");
-        chartPanel.className = "chart-panel";
+        // =====================================================
+        // 更新 Chart 数据（重点）
+        // =====================================================
 
-        // S11
-        let box1 = document.createElement("div");
-        box1.className = "chart-box";
-        let c1 = document.createElement("canvas");
-        box1.appendChild(c1);
+        let labels = g.freq.map(f => f.toFixed(2));
 
-        // S21
-        let box2 = document.createElement("div");
-        box2.className = "chart-box";
-        let c2 = document.createElement("canvas");
-        box2.appendChild(c2);
+        let chart1 = chartMap[key].chart1;
+        chart1.data.labels = labels;
+        chart1.data.datasets[0].data = g.s11_m;
+        chart1.update('none');
 
-        chartPanel.appendChild(box1);
-        chartPanel.appendChild(box2);
-
-        row.appendChild(info);
-        row.appendChild(chartPanel);
-        container.appendChild(row);
-
-        // ================= 画图 =================
-        if (g.freq.length > 0) {
-            drawChart(c1, g.freq, g.s11_m, "S11 Magnitude (dB)");
-            drawChart(c2, g.freq, g.s21_m, "S21 Magnitude (dB)");
-        }
+        let chart2 = chartMap[key].chart2;
+        chart2.data.labels = labels;
+        chart2.data.datasets[0].data = g.s21_m;
+        chart2.update('none');
     });
 }
 
-function drawChart(canvas, x, y, title) {
+function createChart(canvas, title) {
 
-    // 生成索引标签（0, 1, 2, ... 或显示部分频率值）
-    let labels = x.map((freq, idx) => {
-        // 显示所有点的频率标签
-        return freq.toFixed(2);
-    });
-
-    new Chart(canvas, {
+    return new Chart(canvas, {
         type: 'line',
         data: {
-            labels: labels,
+            labels: [],
             datasets: [{
-                data: y,
+                data: [],
                 fill: false,
-                tension: 0.1,
+                tension: 0,
                 borderColor: 'rgb(75, 192, 192)',
                 backgroundColor: 'rgba(75, 192, 192, 0.1)',
-                pointRadius: 1,
-                pointHoverRadius: 4
+                pointRadius: 0,
+                pointHoverRadius: 3
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
+
+            // ⭐ 关键：关闭动画
+            animation: false,
+
             layout:{
                 padding: {
                     left: 20,
@@ -378,6 +411,7 @@ function drawChart(canvas, x, y, title) {
                     bottom: 10
                 }
             },
+
             plugins: {
                 legend: { display: false },
                 title: {
@@ -385,14 +419,16 @@ function drawChart(canvas, x, y, title) {
                     text: title
                 }
             },
+
             scales: {
-                x: { 
+                x: {
                     display: true,
                     title: {
                         display: true,
                         text: 'Frequency (GHz)'
                     }
                 },
+
                 y: {
                     display: true,
                     title: {
@@ -437,9 +473,13 @@ async function downloadJSON() {
 
 // ================= 自动轮询 =================
 
+async function polling() {
+    await fetchData();
+    setTimeout(polling, 3000);
+}
+
 window.onload = () => {
-    fetchData();
-    setInterval(fetchData, 3000);
+    polling();
 };
 
 </script>
