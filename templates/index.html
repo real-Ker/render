@@ -153,11 +153,16 @@
 
 // ================= 控制部分 =================
 
+// 标志位：确保完成提示只触发一次
+let measurementCompleted = false;
+
 function validateInput(v) {
     return v >= 0 && v <= 180 && v % 10 === 0;
 }
 
 function startMeasurement() {
+    // 重置标志位，允许新的测量周期
+    measurementCompleted = false;
     let vrs = parseInt(document.getElementById("vrs").value) + 10;
     let hrs = parseInt(document.getElementById("hrs").value) + 10;
     let shutdown = document.getElementById("shutdown").value;
@@ -265,8 +270,9 @@ function processData(data) {
                 last.H
             );
             
-            // 检查是否到达目标位置
-            if (last.H === last.Target_H && last.V === last.Target_V) {
+            // 检查是否到达目标位置（仅触发一次）
+            if (!measurementCompleted && last.H === last.Target_H && last.V === last.Target_V) {
+                measurementCompleted = true; // 设置标志位，防止重复触发
                 console.log("Measurement complete! H=" + last.H + ", V=" + last.V);
                 
                 // 自动下载数据
