@@ -158,12 +158,14 @@
 
 // 标志位：确保完成提示只触发一次
 let measurementCompleted = false;
+let currentSession = 0;
 
 function validateInput(v) {
     return v >= 0 && v <= 180 && v % 10 === 0;
 }
 
 function startMeasurement() {
+    currentSession++;
     // 重置标志位，允许新的测量周期
     measurementCompleted = false;
     let vrs = parseInt(document.getElementById("vrs").value) + 10;
@@ -254,7 +256,7 @@ function processData(data) {
         let S21_M = row.S21_Mag_dB;
         // let S21_P = row.S21_Phase;
 
-        let key = `${Target_H}_${Target_V}_${H}_${V}`;
+        let key = `S${currentSession}_${Target_H}_${Target_V}_${H}_${V}`;
 
         if (!groups[key]) {
             groups[key] = {
