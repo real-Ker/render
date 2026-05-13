@@ -561,10 +561,10 @@ function setupFixedCamera() {
     const fov = camera.fov * (Math.PI / 180);
     let distance = maxDim / 2 / Math.tan(fov / 2);
 
-    // ⭐ 关键：给更大的冗余（保证旋转不出框）
+    // 关键：给更大的冗余（保证旋转不出框）
     distance *= 2.2;
 
-    // ⭐ 固定一个“观察角度”（不要用 normalize 动态算）
+    // 固定一个“观察角度”（不要用 normalize 动态算）
     camera.position.set(distance, distance * 0.8, distance);
 
     camera.lookAt(center);
@@ -604,7 +604,7 @@ scene.add(axesHelper);
 
 // ===== 材质 =====
 const metal = new THREE.MeshStandardMaterial({ color: 0x888888 });
-const shellMat = new THREE.MeshStandardMaterial({ color: 0x3366ff });
+const shellMat = new THREE.MeshStandardMaterial({ color: 0xc0c0c0 });
 
 // ===== T竖杆 =====
 const vertical = new THREE.Mesh(
@@ -651,7 +651,7 @@ model.add(createShell(-0.6));
 
 window.updateModelRotationFromData = function(vrs, hrs) {
     basePivot.rotation.x = vrs * Math.PI / 180;
-    hrsPivot.rotation.y = hrs * Math.PI / 180;
+    hrsPivot.rotation.y = (-hrs) * Math.PI / 180;
 };
 
 // 初始化时调整一次相机
