@@ -134,6 +134,16 @@
     </select>
 
     <button onclick="startMeasurement()">Start Measurement</button>
+
+    <div style="
+        margin-top: 12px;
+        color: #1e6bd6;
+        font-size: 14px;
+        line-height: 1.5;
+    ">
+        To avoid unintended data overlap, please clear all existing entries 
+        in the <b>Measured Data</b> section prior to starting a new measurement.
+    </div>
 </div>
 
 <!-- 中间数据 -->
@@ -301,7 +311,7 @@ function processData(data) {
                 alert("Measurement complete!\nData has been downloaded automatically.\n\nTarget position: H=" + last.Target_H + ", V=" + last.Target_V);
 
                 // 自动清空数据
-                clearDataAfterMeasurement();
+                // clearDataAfterMeasurement();
             }
         }
     });
@@ -521,30 +531,30 @@ async function clearData() {
     }
 }
 
-async function clearDataAfterMeasurement() {
-    try {
-        let res = await fetch('/clear-data', {
-            method: 'POST'
-        });
+// async function clearDataAfterMeasurement() {
+//     try {
+//         let res = await fetch('/clear-data', {
+//             method: 'POST'
+//         });
 
-        if (!res.ok) {
-            throw new Error("Failed to clear data");
-        }
+//         if (!res.ok) {
+//             throw new Error("Failed to clear data");
+//         }
 
-        // 清空页面图表
-        document.getElementById("chartsContainer").innerHTML = "";
+//         // 清空页面图表
+//         document.getElementById("chartsContainer").innerHTML = "";
 
-        // 清空 chartMap
-        chartMap = {};
+//         // 清空 chartMap
+//         chartMap = {};
 
-        console.log("Measurement data cleared");
+//         console.log("Measurement data cleared");
 
-    } catch (e) {
+//     } catch (e) {
 
-        console.error(e);
-        alert("Failed to auto clear data");
-    }
-}
+//         console.error(e);
+//         alert("Failed to auto clear data");
+//     }
+// }
     
 // ================= 自动轮询 =================
 
