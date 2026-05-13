@@ -299,6 +299,9 @@ function processData(data) {
                 
                 // 弹出提示框
                 alert("Measurement complete!\nData has been downloaded automatically.\n\nTarget position: H=" + last.Target_H + ", V=" + last.Target_V);
+
+                // 自动清空数据
+                clearDataAfterMeasurement();
             }
         }
     });
@@ -417,7 +420,7 @@ function createChart(canvas, title) {
             responsive: true,
             maintainAspectRatio: false,
 
-            // ⭐ 关键：关闭动画
+            // 关键：关闭动画
             animation: false,
 
             layout:{
@@ -518,6 +521,31 @@ async function clearData() {
     }
 }
 
+async function clearDataAfterMeasurement() {
+    try {
+        let res = await fetch('/clear-data', {
+            method: 'POST'
+        });
+
+        if (!res.ok) {
+            throw new Error("Failed to clear data");
+        }
+
+        // 清空页面图表
+        document.getElementById("chartsContainer").innerHTML = "";
+
+        // 清空 chartMap
+        chartMap = {};
+
+        console.log("Measurement data cleared");
+
+    } catch (e) {
+
+        console.error(e);
+        alert("Failed to auto clear data");
+    }
+}
+    
 // ================= 自动轮询 =================
 
 async function polling() {
