@@ -260,6 +260,7 @@ function processData(data) {
 
         if (!groups[key]) {
             groups[key] = {
+                session: currentSession,
                 Target_H, Target_V, H, V,
                 freq: [],
                 s11_m:[],
@@ -311,7 +312,7 @@ function renderCharts(groups) {
 
     Object.values(groups).forEach((g) => {
 
-        let key = `${g.Target_H}_${g.Target_V}_${g.H}_${g.V}`;
+        let key = `S${g.session}_${g.Target_H}_${g.Target_V}_${g.H}_${g.V}`;
 
         // =====================================================
         // 第一次创建 DOM
