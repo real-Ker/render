@@ -13,14 +13,14 @@
         display: flex;
     }
 
-    /* 左：command */
+    /* Left：command */
     .left {
         width: 25%;
         padding: 30px;
         border-right: 2px solid #ccc;
     }
 
-    /* 中：data */
+    /* Middle：data */
     .middle {
         width: 45%;
         padding: 20px;
@@ -29,14 +29,14 @@
         border-right: 2px solid #ccc;
     }
 
-    /* 右：3D */
+    /* Right：3D */
     .right {
         width: 30%;
         padding: 20px;
         height: 100vh;
     }
 
-    /* 3D容器必须撑满 */
+    /* 3D container */
     #modelView {
         width: 100%;
         height: 80vh;
@@ -85,7 +85,7 @@
     padding-bottom: 20px;
     }
 
-    /* 左侧信息 */
+    /* Left information */
     .info-panel {
         width: 220px;
         font-size: 14px;
@@ -98,7 +98,7 @@
         margin-bottom: 6px;
     }
 
-    /* 右侧图 */
+    /* Right charts */
     .chart-panel {
         flex: 1;
         display: flex;
@@ -117,7 +117,7 @@
 
 <body>
 
-<!-- 左侧控制 -->
+<!-- Left control panel -->
 <div class="left">
     <h1>Control Panel</h1>
 
@@ -146,7 +146,7 @@
     </div>
 </div>
 
-<!-- 中间数据 -->
+<!-- Middle measurement data -->
 <div class="middle">
     <h1>Measured Data</h1>
     <div style="display:flex; gap:10px; margin-bottom:20px;">
@@ -156,7 +156,7 @@
     <div id="chartsContainer"></div>
 </div>
 
-<!-- 右侧模型 -->
+<!-- Right 3D model -->
 <div class="right">
     <h1>3D Model</h1>
     <div id="modelView" style="width:100%; height:300px; border:1px solid #ccc;"></div>
@@ -164,9 +164,9 @@
 
 <script>
 
-// ================= 控制部分 =================
+// ================= Control =================
 
-// 标志位：确保完成提示只触发一次
+// Flag: Ensure that the completion prompt is triggered only once
 let measurementCompleted = false;
 let currentSession = 0;
 
@@ -176,7 +176,7 @@ function validateInput(v) {
 
 function startMeasurement() {
     currentSession++;
-    // 重置标志位，允许新的测量周期
+    // Reset the flag to allow a new measurement cycle
     measurementCompleted = false;
     let vrs = parseInt(document.getElementById("vrs").value) + 10;
     let hrs = parseInt(document.getElementById("hrs").value) + 10;
@@ -218,13 +218,13 @@ function startMeasurement() {
     });
 }
 
-// ================= 数据绘图部分 =================
-// 保存所有 chart 实例
+// ================= Data plotting =================
+// Save all chart instances
 let chartMap = {};
 
 async function fetchData() {
     try {
-        let res = await fetch("/data?ts=" + Date.now()); // 防缓存
+        let res = await fetch("/data?ts=" + Date.now()); // anti-cache
         if (!res.ok) {
             throw new Error(`HTTP error! status: ${res.status}`);
         }
@@ -252,7 +252,7 @@ function processData(data) {
             row.V === undefined ||
             row.Frequency_Hz === undefined
         ) {
-            return; // 跳过缺失关键字段的行
+            return; // Skip rows with missing key fields
         }
 
 
@@ -260,7 +260,7 @@ function processData(data) {
         let Target_V = row.Target_V;
         let H = row.H;
         let V = row.V;
-        let F = row.Frequency_Hz / 1e9; // 转成 GHz
+        let F = row.Frequency_Hz / 1e9; // GHz
         let S11_M = row.S11_Mag_dB;
         // let S11_P = row.S11_Phase;
         let S21_M = row.S21_Mag_dB;
@@ -282,7 +282,7 @@ function processData(data) {
 
         let g = groups[key];
 
-        // 添加数据点
+        // Add data point
         if (F !== 0 || S11_M !== 0 || S21_M !== 0) {
             g.freq.push(F);
             g.s11_m.push(S11_M);
@@ -299,19 +299,14 @@ function processData(data) {
                 last.H
             );
             
-            // 检查是否到达目标位置（仅触发一次）
+            // Check if the target position has been reached (triggered only once)
             if (!measurementCompleted && last.H === last.Target_H && last.V === last.Target_V) {
-                measurementCompleted = true; // 设置标志位，防止重复触发
+                measurementCompleted = true; // Set a flag to prevent repeated triggering
                 console.log("Measurement complete! H=" + last.H + ", V=" + last.V);
                 
-                // 自动下载数据
                 downloadJSON();
                 
-                // 弹出提示框
                 alert("Measurement complete!\nData has been downloaded automatically.\n\nTarget position: H=" + last.Target_H + ", V=" + last.Target_V);
-
-                // 自动清空数据
-                // clearDataAfterMeasurement();
             }
         }
     });
@@ -328,7 +323,7 @@ function renderCharts(groups) {
         let key = `S${g.session}_${g.Target_H}_${g.Target_V}_${g.H}_${g.V}`;
 
         // =====================================================
-        // 第一次创建 DOM
+        // Creating the DOM for the first time
         // =====================================================
         if (!chartMap[key]) {
 
@@ -336,12 +331,12 @@ function renderCharts(groups) {
             row.className = "data-row";
             row.id = "row_" + key;
 
-            // ================= 左侧信息 =================
+            // ================= Left information =================
             let info = document.createElement("div");
             info.className = "info-panel";
             info.id = "info_" + key;
 
-            // ================= 右侧图 =================
+            // ================= Right charts =================
             let chartPanel = document.createElement("div");
             chartPanel.className = "chart-panel";
 
@@ -367,7 +362,7 @@ function renderCharts(groups) {
 
             container.appendChild(row);
 
-            // 创建 chart
+            // Create chart
             let chart1 = createChart(c1, "S11 Magnitude (dB)");
             let chart2 = createChart(c2, "S21 Magnitude (dB)");
 
@@ -379,7 +374,7 @@ function renderCharts(groups) {
         }
 
         // =====================================================
-        // 更新信息
+        // Updatae information
         // =====================================================
 
         chartMap[key].info.innerHTML = `
@@ -393,7 +388,7 @@ function renderCharts(groups) {
         `;
 
         // =====================================================
-        // 更新 Chart 数据（重点）
+        // Update chart data
         // =====================================================
 
         let labels = g.freq.map(f => f.toFixed(2));
@@ -430,7 +425,7 @@ function createChart(canvas, title) {
             responsive: true,
             maintainAspectRatio: false,
 
-            // 关键：关闭动画
+            // Key: Turn off animations
             animation: false,
 
             layout:{
@@ -471,27 +466,23 @@ function createChart(canvas, title) {
     });
 }
 
-// ================= 下载数据 =================
+// ================= Download data =================
 
 async function downloadJSON() {
     try {
         let res = await fetch('/data?ts=' + Date.now());
         let data = await res.json();
 
-        // 转成字符串
         let jsonStr = JSON.stringify(data, null, 2);
 
-        // 创建 Blob
         let blob = new Blob([jsonStr], { type: "application/json" });
 
-        // 创建下载链接
         let link = document.createElement("a");
         link.href = URL.createObjectURL(blob);
         let now = new Date();
         let filename = `data_${now.getFullYear()}_${now.getMonth()+1}_${now.getDate()}_${now.getHours()}${now.getMinutes()}${now.getSeconds()}.json`;
         link.download = filename;
 
-        // 触发下载
         link.click();
 
     } catch (e) {
@@ -500,10 +491,10 @@ async function downloadJSON() {
     }
 }
 
-// ================= 清空数据 =================
+// ================= Clear data =================
 
 async function clearData() {
-    // 防止误操作
+    // Prevent accidental operation
     let confirmClear = confirm("Are you sure you want to clear all measured data?");
 
     if (!confirmClear) return;
@@ -517,10 +508,8 @@ async function clearData() {
             throw new Error("Failed to clear data");
         }
 
-        // 清空前端图表
         document.getElementById("chartsContainer").innerHTML = "";
 
-        // 清空 chartMap
         chartMap = {};
 
         alert("Data cleared successfully!");
@@ -530,33 +519,8 @@ async function clearData() {
         alert("Failed to clear data");
     }
 }
-
-// async function clearDataAfterMeasurement() {
-//     try {
-//         let res = await fetch('/clear-data', {
-//             method: 'POST'
-//         });
-
-//         if (!res.ok) {
-//             throw new Error("Failed to clear data");
-//         }
-
-//         // 清空页面图表
-//         document.getElementById("chartsContainer").innerHTML = "";
-
-//         // 清空 chartMap
-//         chartMap = {};
-
-//         console.log("Measurement data cleared");
-
-//     } catch (e) {
-
-//         console.error(e);
-//         alert("Failed to auto clear data");
-//     }
-// }
     
-// ================= 自动轮询 =================
+// ================= Automatic polling =================
 
 async function polling() {
     await fetchData();
@@ -570,17 +534,17 @@ window.onload = () => {
 </script>
 
 <script type="module">
-// ================= 3D轮询 =================
+// ================= 3D polling =================
 
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160/build/three.module.js';
 
 const container = document.getElementById("modelView");
 
-// ===== 场景 =====
+// ===== Scene =====
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xf5f5f5);
 
-// ===== 相机 =====
+// ===== Camera =====
 const camera = new THREE.PerspectiveCamera(
     60,
     container.clientWidth / container.clientHeight,
@@ -588,7 +552,7 @@ const camera = new THREE.PerspectiveCamera(
     1000
 );
 
-// ===== 固定相机（一次性计算）=====
+// ===== Fixed camera (one-time calculation)=====
 function setupFixedCamera() {
 
     const box = new THREE.Box3().setFromObject(model);
@@ -600,52 +564,50 @@ function setupFixedCamera() {
     const fov = camera.fov * (Math.PI / 180);
     let distance = maxDim / 2 / Math.tan(fov / 2);
 
-    // 关键：给更大的冗余（保证旋转不出框）
     distance *= 2.2;
 
-    // 固定一个“观察角度”（不要用 normalize 动态算）
     camera.position.set(distance, distance * 0.8, distance);
 
     camera.lookAt(center);
 }
 
-// ===== 渲染器 =====
+// ===== Renderer =====
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(container.clientWidth, container.clientHeight);
 container.appendChild(renderer.domElement);
 
-// ===== 光 =====
+// ===== Light =====
 scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 1));
 
 // ======================================================
-//  ① VRS轴（底部水平轴）
+//  ① VRS pivot
 // ======================================================
 const basePivot = new THREE.Group();
 basePivot.position.set(0, 0, 0); // 地面位置
 scene.add(basePivot);
 
 // ======================================================
-//  ② HRS轴（T中轴）
+//  ② HRS pivot
 // ======================================================
 const hrsPivot = new THREE.Group();
 hrsPivot.position.set(0, 1, 0); // T 的底部到中轴高度
 basePivot.add(hrsPivot);
 
 // ======================================================
-//  ③ 模型主体
+//  ③ Model
 // ======================================================
 const model = new THREE.Group();
 hrsPivot.add(model);
 
-// ===== 坐标轴辅助线 =====
+// ===== Axes =====
 const axesHelper = new THREE.AxesHelper(3);
 scene.add(axesHelper);
 
-// ===== 材质 =====
+// ===== Material =====
 const metal = new THREE.MeshStandardMaterial({ color: 0x888888 });
 const shellMat = new THREE.MeshStandardMaterial({ color: 0xc0c0c0 });
 
-// ===== T竖杆 =====
+// ===== T-vertical =====
 const vertical = new THREE.Mesh(
     new THREE.BoxGeometry(0.3, 2, 0.2),
     metal
@@ -653,7 +615,7 @@ const vertical = new THREE.Mesh(
 vertical.position.set(0, 1, 0);
 model.add(vertical);
 
-// ===== T横杆 =====
+// ===== T-horizontal =====
 const horizontal = new THREE.Mesh(
     new THREE.BoxGeometry(2, 0.3, 0.2),
     metal
@@ -661,7 +623,7 @@ const horizontal = new THREE.Mesh(
 horizontal.position.set(0, 2, 0);
 model.add(horizontal);
 
-// ===== 两个壳（对称）=====
+// ===== Shells =====
 function createShell(x) {
     const shell = new THREE.Mesh(
         new THREE.BoxGeometry(0.8, 0.5, 0.4),
@@ -674,36 +636,22 @@ function createShell(x) {
 model.add(createShell(0.6));
 model.add(createShell(-0.6));
 
-// ======================================================
-//  控制旋转
-// ======================================================
-// function updateRotation() {
-//     let vrs = parseFloat(document.getElementById("vrs").value) || 0;
-//     let hrs = parseFloat(document.getElementById("hrs").value) || 0;
-
-//     basePivot.rotation.x = vrs * Math.PI / 180;
-//     hrsPivot.rotation.y = hrs * Math.PI / 180;
-// }
-
-// document.getElementById("vrs").addEventListener("input", updateRotation);
-// document.getElementById("hrs").addEventListener("input", updateRotation);
-
 window.updateModelRotationFromData = function(vrs, hrs) {
     basePivot.rotation.x = vrs * Math.PI / 180;
     hrsPivot.rotation.y = (-hrs) * Math.PI / 180;
 };
 
-// 初始化时调整一次相机
+// Adjust the camera once during initialization
 setupFixedCamera();
 
-// ===== 渲染 =====
+// ===== Animate =====
 function animate() {
     requestAnimationFrame(animate);
     renderer.render(scene, camera);
 }
 animate();
 
-// 自适应
+// Auto-adaptation
 window.addEventListener("resize", () => {
     camera.aspect = container.clientWidth/container.clientHeight;
     camera.updateProjectionMatrix();
