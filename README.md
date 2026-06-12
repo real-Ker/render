@@ -1,5 +1,5 @@
 # Automated Microwave Scatterometer & Digital Twin
-# 自动化微波散射仪与数字孪生平台
+# 自动化微波散射计与数字孪生平台
 
 ---
 
@@ -349,7 +349,7 @@ To modify: edit the constants, recompile `final.c`, and replace the executable.
 
 ## 概述
 
-本项目实现了一套自动化微波散射仪与云端数字孪生平台。系统通过 PTZ 云台天线和矢量网络分析仪（VNA），支持全自动无人值守的微波散射测量。用户可通过 Web 界面远程配置测量任务、监控执行状态、查看测量结果，并实时与三维模型交互。
+本项目实现了一套自动化微波散射计与云端数字孪生平台。系统通过 PTZ 云台天线和矢量网络分析仪（VNA），支持全自动无人值守的微波散射测量。用户可通过 Web 界面远程配置测量任务、监控执行状态、查看测量结果，并实时与三维模型交互。
 
 **系统组成：**
 - 指令服务器（Render 云端）
@@ -366,7 +366,7 @@ To modify: edit the constants, recompile `final.c`, and replace the executable.
 
 ### 1. 访问 Web 界面
 
-在浏览器中打开散射仪 Web 控制台。
+在浏览器中打开散射计 Web 控制台。
 
 **网址：https://render-a2mh.onrender.com**
 
@@ -469,7 +469,7 @@ Auto Shutdown = OFF
 
 ### 7. 数字孪生可视化
 
-右侧面板包含散射仪的实时三维模型，根据当前水平角和垂直角自动更新，便于用户远程观察运行期间的天线朝向。
+右侧面板包含散射计的实时三维模型，根据当前水平角和垂直角自动更新，便于用户远程观察运行期间的天线朝向。
 
 ---
 
