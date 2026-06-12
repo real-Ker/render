@@ -20,7 +20,7 @@ The system architecture consists of:
 
 ## 1. Accessing the Web Interface
 
-Open the scatterometer web dashboard in a browser. **Website Address: https://render-a2mh.onrender.com (TO BE UPDATED)**
+Open the scatterometer web dashboard in a browser. **Website Address: https://render-a2mh.onrender.com**
 
 The interface contains three major sections:
 
